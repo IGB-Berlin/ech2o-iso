@@ -1,0 +1,35 @@
+\documentclass[10pt,letterpaper]{book}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\usepackage[english]{babel}
+\usepackage{longtable}
+\def\echo{Ech$_2$o }
+
+\author{Marco Maneta}
+\title{EcH$_2$O  v 5.3beta\\ User's Manual}
+
+\newsavebox\FrameBox
+\newenvironment{Frame}{%
+  \par\setbox\FrameBox\hbox\bgroup\minipage{0.9\textwidth}\parskip\baselineskip\ignorespaces
+}{%
+  \endminipage\egroup\fbox{\box\FrameBox}\par
+}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\include{Setup}
+
+\include{Example}
+
+
+\include{Appendixa}
+%\include{Appendixb}
+
+
+\end{document}

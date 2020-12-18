@@ -1,0 +1,205 @@
+/*******************************************************************************
+ * Ech2o, a spatially-distributed, ecohydrologic simulator
+ * Copyright (c) 2016 Marco Maneta <marco.maneta@umontana.edu>
+ *
+ *     This file is part of ech2o, a hydrologic model developed at the 
+ *     University of Montana.
+ *
+ *     Ech2o is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Ech2o is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Ech2o.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Contributors:
+ *    Marco Maneta
+ *******************************************************************************/
+/*
+ * SperryModel.cpp
+ *
+ * Created on: Apr 16, 2019
+ *  Author: Aaron Smith
+ */
+#define ARMA_NO_DEBUG //disables armadillo bound checks for speed optimization
+#include <armadillo>
+#include "Forest.h"
+
+using namespace arma;
+
+int Forest::SperryModel(Basin &bas, Atmosphere &atm, Control &ctrl,
+			   REAL8 rootdepth,REAL8 Sold, REAL8 psiae, REAL8 bclambda, REAL8 airTp,
+			   REAL8 airRH, REAL8 rho_a, REAL8 gamma, REAL8 ra, REAL8 poros, 
+			   REAL8 thetawp, REAL8 evap_a,REAL8 fA, REAL8 fB, REAL8 fC, REAL8 leavesurfRH,
+			   REAL8 leafRH,REAL8 &LET, REAL8 &LE, REAL8 &H,
+			   REAL8 &temp1,REAL8 &temp2, UINT4 s, UINT4 r, UINT4 c){
+
+
+  const REAL8 grav = 9.8;
+  const REAL8 Vw = 18e-6; // partial molal volume of water m3 mol-1
+  const REAL8 Rbar = 8.31446; // Universal gas constant in J K-1 mol-1
+  REAL8 dt = ctrl.dt;
+  REAL8 desdTs;
+  REAL8 ra_t;
+  REAL8 dleafRHdT = 0;
+  REAL8 dleafRHdpsi_l = 0;
+  REAL8 dgcdfgspsi = 0;
+  REAL8 dEdlwp = 0;
+  REAL8 dEdT = 0;
+  REAL8 dLETdlwp = 0;
+  REAL8 dLETdT = 0;
+  REAL8 gc = 0;
+  REAL8 lwp_min, lwp_max;
+  REAL8 albedo,emissivity,BeerK,LAI;
+  REAL8 E = 0;
+  REAL8 ea, es;
+  REAL8 maxAv;
+  REAL8 lambda;
+  REAL8 temp = 0;
+  REAL8 LEmax;
+  /***
+  * state variables:
+  * x[0]: S - (degree of saturation at time t+1)
+  * x[1]: psi_s - soil water potential
+  * x[3]: Ts - Leaf temperature
+  ***/
+
+  albedo = _species[s].albedo;
+  emissivity = _species[s].emissivity;
+  BeerK = _species[s].KBeers;
+  LAI = _species[s]._LAI->matrix[r][c];
+
+  ea = SatVaporPressure(airTp) * airRH;
+
+  lwp_min = _species[s].lwp_min;
+  lwp_max = _species[s].lwp_max;
+
+  int k = 0;
+
+  colvec x(3);
+  colvec deltax(3);
+  colvec F(3);
+  mat J = zeros<mat>(3,3);
+  //-------- SOLVE THE SOILS IN LAYER 1 ---------------------------------
+  //provide initial guess  for loop
+  x[0] = Sold;
+  x[1] = psiae / powl(x[0], bclambda);
+  x[2] = airTp;
+  maxAv = (poros - thetawp);
+
+  CalculateCanopyConduct(bas, atm, ctrl, x[1], dgcdfgspsi, s, r, c);
+  do {
+
+      lambda = x[2] < 0 ? lat_heat_vap + lat_heat_fus : lat_heat_vap;
+
+      gc = dgcdfgspsi *std::max<REAL8>(0.0,std::min<REAL8>(1,(lwp_min - x[1])/(lwp_min - lwp_max)));
+
+      if (gc < 1e-13)
+        gc = 1e-13;
+      
+      ra_t = ra + (1 / gc);
+
+      if(x[0]<0)
+	x[0] = 0.01;
+      temp = -x[1] * rho_w * grav * Vw / (Rbar*(x[2]+273.15));
+
+      if (temp >-708.4)
+        leafRH = std::min<REAL8>(1,expl(temp));
+      else
+        leafRH = 0;
+
+      if(abs(evap_a)<RNDOFFERR){
+	LE = 0.0;
+      } else {
+	LEmax = -evap_a * (rho_w * lambda); 
+	LE = LatHeatCanopy(bas, atm, leavesurfRH, ra, x[2], r, c) > LEmax ? LEmax : LatHeatCanopy(bas, atm, leavesurfRH, ra, x[2], r, c);
+      }
+      LET = LatHeatCanopy(bas, atm, leafRH, ra_t, x[2], r, c);
+      H = SensHeatCanopy(atm, ra, x[2], r, c);
+
+      E = -LET / (rho_w * lambda);
+      E= std::max<REAL8>(0.0,E);
+
+      F[0] = (x[0] - Sold) * maxAv * rootdepth / dt + E; 
+      F[1] = psiae / powl(x[0], bclambda) - x[1];
+      F[2] = NetRadCanopy(atm, x[2], emissivity, albedo, BeerK, LAI, r, c)
+	  + LE + H + LET;
+
+      dleafRHdT = leafRH *  x[1] * rho_w * grav * Vw / (Rbar*(x[2]+273.15)*(x[2]+273.15));
+
+      if(leafRH == 1)
+        dleafRHdpsi_l = 0;
+      else
+        dleafRHdpsi_l = - rho_w * grav * Vw * leafRH  / (Rbar*(x[2]+273.15));
+
+      es = SatVaporPressure(x[2]);
+      desdTs = es * ((17.3 / (x[2] + 237.3))
+		       - 17.3 * x[2] / (powl(x[2] + 237.3, 2)));
+
+      if (gc < 1e-12 || x[1] > lwp_min)
+	dLETdlwp = LET = E = 0;
+      else if (x[1] < lwp_max)
+	dLETdlwp = -spec_heat_air * rho_a * (ea - es) * (lwp_min - lwp_max)
+	  / (gamma * dgcdfgspsi * (lwp_min - lwp_max) * (lwp_min - lwp_max) * ra_t * ra_t);
+      else
+	dLETdlwp = -spec_heat_air * rho_a * (ea - es) * (lwp_min - lwp_max)
+	  / (gamma * dgcdfgspsi * (lwp_min - x[1])  * (lwp_min - x[1]) * ra_t * ra_t);
+
+      dLETdT = - rho_a * spec_heat_air / (ra_t * gamma) * (desdTs*leafRH + es*dleafRHdT);
+
+      dEdlwp = - dLETdlwp / (rho_w * lambda);
+      dEdT = - dLETdT / (rho_w * lambda);
+
+      // Fill out the jacobian
+      J(0,0) = rootdepth * maxAv / dt;
+      J(0,1) = E==0 ?  0 : dEdlwp;
+      J(0,2) = E==0 ? 0 : dEdT;
+
+      J(1,0) = -bclambda * psiae * powl(x[0], -(bclambda + 1));
+      J(1,1) = -1;
+
+      J(2,1) = dLETdlwp;
+      J(2,2) = fA * powl(x[2] + 273.2, 3) + fB * desdTs * leavesurfRH
+	  + fC + dLETdT;
+
+      // solve system
+      if (!solve(deltax, J, -F)) {
+	  cout << "Singular Jacobian found in Newton solver for canopy balance.\n";
+	  //return 1;
+      }
+
+      x += deltax;
+
+      k++;
+      
+    } while (norm(F, "inf") > 0.000001 && k < MAX_ITER);
+
+      if (k >= MAX_ITER)
+	std::cout
+	  << "WARNING: non-convergence in canopy energy balance at cell row: "
+	  << r << " col: " << c << " closure err: " << norm(deltax, 2)
+	  << endl;
+
+      if (x[2] < atm.getTemperature()->matrix[r][c]) { //if the calculated canopy temperature is lower than air temperature make it air temperature
+	LET = LatHeatCanopy(bas, atm, leafRH, ra_t, x[2], r, c);
+	if(abs(evap_a)<RNDOFFERR){
+	  LE = 0.0;
+	} else {
+	  LEmax = -evap_a * (rho_w * lambda); 
+	  LE = LatHeatCanopy(bas, atm, leavesurfRH, ra, x[2], r, c) > LEmax ? LEmax : LatHeatCanopy(bas, atm, leavesurfRH, ra, x[2], r, c);
+	}
+	x[2] = atm.getTemperature()->matrix[r][c];
+      }
+
+      temp1 = x[1];
+      temp2 = x[2];
+
+      return EXIT_SUCCESS;
+}
+

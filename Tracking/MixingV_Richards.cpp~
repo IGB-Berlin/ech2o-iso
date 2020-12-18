@@ -1,0 +1,669 @@
+/*******************************************************************************
+ * Ech2o, a spatially-distributed, ecohydrologic simulator
+ * Copyright (c) 2016 Marco Maneta <marco.maneta@umontana.edu>
+ *
+ *     This file is part of ech2o, a hydrologic model developed at the 
+ *     University of Montana.
+ *
+ *     Ech2o is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Ech2o is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Ech2o.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Contributors:
+ *    Aaron Smith
+ *******************************************************************************/
+/*
+ * MixingV_Richards.cpp
+ *
+ *  Created on: Oct 26, 2020
+ *      Author: Aaron Smith
+ */
+
+#include "Basin.h"
+
+void Tracking::MixingV_Richards(Basin &bsn, Control &ctrl, double d1, double d2, double d3,double dt,int reinf, int r, int c)
+{
+  // Soil state before routing
+  double pond_old = bsn.getPondingWater()->matrix[r][c];
+  double theta1_old = bsn.getSoilMoist1()->matrix[r][c];
+  double theta2_old = bsn.getSoilMoist2()->matrix[r][c];
+  double theta3_old = bsn.getSoilMoist3()->matrix[r][c];
+
+  // Set the soil saturation
+  double S1 = std::max<double>((theta1_old - bsn.getSoilMoistR1()->matrix[r][c])/
+			       (bsn.getPorosityL1()->matrix[r][c] - bsn.getSoilMoistR1()->matrix[r][c]),0);
+  double S2 = std::max<double>((theta2_old - bsn.getSoilMoistR2()->matrix[r][c])/
+			       (bsn.getPorosityL2()->matrix[r][c] - bsn.getSoilMoistR2()->matrix[r][c]),0);
+  double S3 = std::max<double>((theta3_old - bsn.getSoilMoistR3()->matrix[r][c])/
+			       (bsn.getPorosityL3()->matrix[r][c] - bsn.getSoilMoistR3()->matrix[r][c]),0);
+  // ------------------------------------------------------------------------------------------
+  // Total incoming and outflow fluxes
+  // ------------------------------------------------------------------------------------------
+  double Qout1, Qout2, Qout3;
+  double Qin1, Qin2, Qin3;//, Qleak;
+  // ------------------------------------------------------------------------------------------
+  // Vertical fluxes
+  // ------------------------------------------------------------------------------------------
+  // Layer 1
+  double SrftoL1 = bsn.getFluxSrftoL1()->matrix[r][c];
+  double SnowtoSrf = bsn.getFluxSnowtoSrf()->matrix[r][c];
+  double L1toSrf = bsn.getFluxExfilt()->matrix[r][c];
+  double L1toL2 = bsn.getFluxL1toL2()->matrix[r][c];
+  double L2toL1 = bsn.getFluxL2toL1()->matrix[r][c];
+  double L1toChn = bsn.getFluxL1toChn()->matrix[r][c];
+  int exfilt; // switch for if exfiltration happens (1 = yes, 0 = no)
+   // Layer 2
+  double L2toL3 = bsn.getFluxL2toL3()->matrix[r][c];
+  double L3toL2 = bsn.getFluxL3toL2()->matrix[r][c];
+  double L2toChn = bsn.getFluxL2toChn()->matrix[r][c];
+  // Layer 3
+  double GWtoChn = bsn.getFluxGWtoChn()->matrix[r][c];
+  double leak = bsn.getFluxLeak()->matrix[r][c];
+  // ------------------------------------------------------------------------------------------
+  // Lateral out
+  // ------------------------------------------------------------------------------------------
+  double L1toLat = bsn.getFluxL1toLat()->matrix[r][c];
+  double L2toLat = bsn.getFluxL2toLat()->matrix[r][c];
+  double GWtoLat = bsn.getFluxGWtoLat()->matrix[r][c];
+  // ------------------------------------------------------------------------------------------
+  // Lateral in
+  // ------------------------------------------------------------------------------------------
+  double LattoL1 = bsn.getFluxLattoL1()->matrix[r][c];
+  double LattoL2 = bsn.getFluxLattoL2()->matrix[r][c];
+  double LattoGW = bsn.getFluxLattoGW()->matrix[r][c]; 
+  double LattoChn = bsn.getFluxLattoChn()->matrix[r][c]; 
+  double LattoSrf = bsn.getFluxLattoSrf()->matrix[r][c]; 
+
+  // ------------------------------------------------------------------------------------------
+  // For GW and surface (pond+channel), equivalent lateral inputs values
+  // ------------------------------------------------------------------------------------------
+  double FinSrf = L1toSrf + GWtoChn + LattoChn;
+  double d2HinS = 0;
+  double d2Hin1 = 0;
+  double d2Hin2 = 0;
+  double d2Hin3 = 0;
+  double d18Oin = 0;
+  double Agein= 0;
+
+  // save the outflow tracer values of the fluxes
+  double SrftoL1_d2 = -1000;
+  double SrftoL1_o18= -1000;
+  double SrftoL1_Age= -1000;
+  /*
+  // Mass balance checking
+  double d2Hsoil1_init = _d2Hsoil1->matrix[r][c];
+  double d2Hsoil2_init = _d2Hsoil2->matrix[r][c];
+  double d2Hsoil3_init = _d2Hsoil3->matrix[r][c];
+  double V1_new;
+  double V2_new;
+  double V3_new;
+  */
+  // ------------------------------------------------------------------------------------------
+  // Determine which the order of layer solving
+  // ------------------------------------------------------------------------------------------
+  if(L1toL2 >= L2toL1){ // Layer 1 feeds layer 2
+    if(L1toSrf > RNDOFFERR){ // exfiltration => estimate layer 1 first
+      // -------------------------------------------------
+      // Layer 1 (from lateral --> Layer 2 and Surface)
+      // -------------------------------------------------
+      exfilt = 1;
+      //      cout << "layer 1 --> layer 2 and surface" << endl;
+      Qin1 = LattoL1;
+      Qout1 = L1toSrf + L1toLat + L1toL2 + L1toChn;
+      if(ctrl.sw_2H){
+	if(Qin1 > RNDOFFERR){
+	  d2Hin1 = _Fd2HLattoL1->matrix[r][c] / Qin1;
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_d2Hsoil1->matrix[r][c],_d2Hsoil1->matrix[r][c],
+		       LattoL1,d2Hin1,Qout1,_d2Hsoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _d2Hsoil1_Out->matrix[r][c] = _d2Hsoil1->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin1 > RNDOFFERR){
+	  d18Oin = _Fd18OLattoL1->matrix[r][c] / Qin1;
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_d18Osoil1->matrix[r][c],_d18Osoil1->matrix[r][c],
+		       LattoL1,d18Oin,Qout1,_d18Osoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Osoil1_Out->matrix[r][c] = _d18Osoil1->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin1 > RNDOFFERR){
+	  Agein = _FAgeLattoL1->matrix[r][c] / Qin1;
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_Agesoil1->matrix[r][c],_Agesoil1->matrix[r][c],
+		       LattoL1,Agein,Qout1,_Agesoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agesoil1_Out->matrix[r][c] = _Agesoil1->matrix[r][c];
+	}
+      }
+    } else { // infiltration => estimate surface first
+      // -------------------------------------------------
+      // Surface water mixing (From Lateral and snow --> Layer 1)
+      // -------------------------------------------------
+      exfilt = 0;
+      if(pond_old > RNDOFFERR){ // update the surface water if there is ponding water
+	FinSrf= SnowtoSrf + LattoSrf;                           // incoming water to the surface
+	if(ctrl.sw_2H){
+	  if(FinSrf > RNDOFFERR){
+	    d2HinS = (_Fd2HLattoSrf->matrix[r][c] + SnowtoSrf*_d2Hsnowmelt->matrix[r][c])/FinSrf; 
+	    TracerMixing(bsn,ctrl,pond_old,_d2Hsurface->matrix[r][c],_d2Hsurface->matrix[r][c],
+			 FinSrf,d2HinS,SrftoL1,SrftoL1_d2,1.0,ctrl.toggle_mix,r,c);
+	  } else {
+	    SrftoL1_d2 = _d2Hsurface->matrix[r][c];
+	  }
+	}
+	if(ctrl.sw_18O){
+	  if(FinSrf > RNDOFFERR){
+	    d18Oin = (_Fd18OLattoSrf->matrix[r][c] + SnowtoSrf*_d18Osnowmelt->matrix[r][c])/FinSrf;
+	    TracerMixing(bsn,ctrl,pond_old,_d18Osurface->matrix[r][c],_d18Osurface->matrix[r][c],
+			   FinSrf,d18Oin,SrftoL1,SrftoL1_o18,1.0,ctrl.toggle_mix,r,c);
+	  } else {
+	    SrftoL1_o18 = _d18Osurface->matrix[r][c];
+	  }
+	}
+	if(ctrl.sw_Age){
+	  if(FinSrf > RNDOFFERR){
+	    Agein = (_FAgeLattoSrf->matrix[r][c] + SnowtoSrf*_Agesnowmelt->matrix[r][c])/FinSrf;
+	    TracerMixing(bsn,ctrl,pond_old,_Agesurface->matrix[r][c],_Agesurface->matrix[r][c],
+			 FinSrf,Agein,SrftoL1,SrftoL1_Age,1.0,ctrl.toggle_mix,r,c);
+	  } else {
+	    SrftoL1_Age = _Agesurface->matrix[r][c];
+	  }
+	}
+      }
+      // -------------------------------------------------
+      // Layer 1 (From pond and lateral --> Layer 2)
+      // -------------------------------------------------
+      //      cout << "layer 1 (plus infilt) --> layer 2" << endl;
+      Qin1 = LattoL1 + SrftoL1;
+      Qout1 = L1toLat + L1toL2 + L1toChn;
+      if(ctrl.sw_2H){
+	if(Qin1 > RNDOFFERR){
+	  d2Hin1 = (_Fd2HLattoL1->matrix[r][c] + SrftoL1_d2 * SrftoL1)/ (Qin1);
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_d2Hsoil1->matrix[r][c],_d2Hsoil1->matrix[r][c],
+		       Qin1,d2Hin1,Qout1,_d2Hsoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _d2Hsoil1_Out->matrix[r][c] = _d2Hsoil1->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin1 > RNDOFFERR){
+	  d18Oin = (_Fd18OLattoL1->matrix[r][c] + SrftoL1_o18 * SrftoL1)/ (Qin1);
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_d18Osoil1->matrix[r][c],_d18Osoil1->matrix[r][c],
+		       Qin1,d18Oin,Qout1,_d18Osoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Osoil1_Out->matrix[r][c] = _d18Osoil1->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin1 > RNDOFFERR){
+	  Agein = (_FAgeLattoL1->matrix[r][c] + SrftoL1_Age * SrftoL1)/ (Qin1);
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_Agesoil1->matrix[r][c],_Agesoil1->matrix[r][c],
+		       Qin1,Agein,Qout1,_Agesoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agesoil1_Out->matrix[r][c] = _Agesoil1->matrix[r][c];
+	}
+      }
+    } // layer 1 and surface completed
+    // Layer 1 feeds layers below
+    if(L2toL3 >= L3toL2) { // layer 2 feeds layer 3
+      // -------------------------------------------------
+      // Layer 2 (From layer 1 and lateral --> Layer 3)
+      // -------------------------------------------------
+      //      cout << "layer 2 (from layer 1) -- > layer 3" << endl;
+      Qin2  = LattoL2 + L1toL2;
+      Qout2 = L2toLat + L2toL3 + L2toChn;
+      if(ctrl.sw_2H){
+	if(Qin2 > RNDOFFERR){
+	  d2Hin2 = (_Fd2HLattoL2->matrix[r][c] + _d2Hsoil1_Out->matrix[r][c]*L1toL2) / ( Qin2 );
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_d2Hsoil2->matrix[r][c],_d2Hsoil2->matrix[r][c],
+		       Qin2,d2Hin2,Qout2,_d2Hsoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else {
+	  _d2Hsoil2_Out->matrix[r][c] = _d2Hsoil2->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin2 > RNDOFFERR){
+	  d18Oin = (_Fd18OLattoL2->matrix[r][c] + _d18Osoil1_Out->matrix[r][c]*L1toL2) / ( Qin2 );
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_d18Osoil2->matrix[r][c],_d18Osoil2->matrix[r][c],
+		       Qin2,d18Oin,Qout2,_d18Osoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Osoil2_Out->matrix[r][c] = _d18Osoil2->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin2 > RNDOFFERR){
+	  Agein = (_FAgeLattoL2->matrix[r][c] + _Agesoil1_Out->matrix[r][c]*L1toL2) / ( Qin2 );
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_Agesoil2->matrix[r][c],_Agesoil2->matrix[r][c],
+		       Qin2,Agein,Qout2,_Agesoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agesoil2_Out->matrix[r][c] = _Agesoil2->matrix[r][c];
+	}
+      }
+      // -------------------------------------------------
+      // Layer 3 (From layer 2 and lateral --> Leak)
+      // -------------------------------------------------
+      //      cout << "layer 3 (from layer 2)" << endl;
+      Qin3  = LattoGW + L2toL3;
+      Qout3 = GWtoLat + leak + GWtoChn;
+      if(ctrl.sw_2H){
+	if(Qin3>RNDOFFERR){
+	  d2Hin3 = (_Fd2HLattoGW->matrix[r][c] + _d2Hsoil2_Out->matrix[r][c]*L2toL3) / ( Qin3 );
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_d2Hsoil3->matrix[r][c],_d2Hsoil3->matrix[r][c],
+		       Qin3,d2Hin3,Qout3,_d2Hgroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _d2Hgroundwater->matrix[r][c] = _d2Hsoil3->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin3>RNDOFFERR){
+	  d18Oin = (_Fd18OLattoGW->matrix[r][c] + _d18Osoil2_Out->matrix[r][c]*L2toL3) / ( Qin3 );
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_d18Osoil3->matrix[r][c],_d18Osoil3->matrix[r][c],
+		       Qin3,d18Oin,Qout3,_d18Ogroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Ogroundwater->matrix[r][c] = _d18Osoil3->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin3>RNDOFFERR){
+	  Agein = (_FAgeLattoGW->matrix[r][c] + _Agesoil2_Out->matrix[r][c]*L2toL3) / ( Qin3 );
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_Agesoil3->matrix[r][c],_Agesoil3->matrix[r][c],
+		       Qin3,Agein,Qout3,_Agegroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agegroundwater->matrix[r][c] = _Agesoil3->matrix[r][c];
+	}
+      }
+    } else { // layer 3 feeds layer 2
+      // -------------------------------------------------
+      // Layer 3 (from lateral to layer 2 and leak)
+      // -------------------------------------------------
+      //      cout << "layer 3 --> layer 2" << endl;
+      Qin3 = LattoGW;
+      Qout3 = GWtoLat + leak + L3toL2 + GWtoChn;
+      if(ctrl.sw_2H){
+	if(Qin3 > RNDOFFERR){
+	  d2Hin3 = _Fd2HLattoGW->matrix[r][c] / LattoGW;
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_d2Hsoil3->matrix[r][c],_d2Hsoil3->matrix[r][c],
+		       Qin3,d2Hin3,Qout3,_d2Hgroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else{
+	  _d2Hgroundwater->matrix[r][c] = _d2Hsoil3->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin3 > RNDOFFERR){
+	  d18Oin = _Fd18OLattoGW->matrix[r][c] / LattoGW;
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_d18Osoil3->matrix[r][c],_d18Osoil3->matrix[r][c],
+		       Qin3,d18Oin,Qout3,_d18Ogroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Ogroundwater->matrix[r][c] = _d18Osoil3->matrix[r][c];
+	}
+       }
+      if(ctrl.sw_Age){
+	if(Qin3 > RNDOFFERR){
+	  Agein = _FAgeLattoGW->matrix[r][c] / LattoGW;
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_Agesoil3->matrix[r][c],_Agesoil3->matrix[r][c],
+		       Qin3,Agein,Qout3,_Agegroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agegroundwater->matrix[r][c] = _Agesoil3->matrix[r][c];
+	}
+      }
+      // -------------------------------------------------
+      // Layer 2 (from lateral, Layer3 and layer 1)
+      // -------------------------------------------------
+      //      cout << "layer 2 (from layer 3 and layer 1)" << endl;
+      Qin2 = LattoL2 + L1toL2 + L3toL2;
+      Qout2 = L2toLat + L2toChn;
+      if(ctrl.sw_2H){
+	if(Qin2 > RNDOFFERR){
+	  d2Hin2 = (_Fd2HLattoL2->matrix[r][c] + L1toL2*_d2Hsoil1_Out->matrix[r][c] + L3toL2 * _d2Hgroundwater->matrix[r][c])/ Qin2;
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_d2Hsoil2->matrix[r][c],_d2Hsoil2->matrix[r][c],
+		       Qin2,d2Hin2,Qout2,_d2Hsoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else{
+	  _d2Hsoil2_Out->matrix[r][c] = _d2Hsoil2->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin2 > RNDOFFERR){
+	  d18Oin = (_Fd18OLattoL2->matrix[r][c] + 
+		    L1toL2*_d18Osoil1_Out->matrix[r][c] + L3toL2 * _d18Ogroundwater->matrix[r][c])/ Qin2;
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_d18Osoil2->matrix[r][c],_d18Osoil2->matrix[r][c],
+		       Qin2,d18Oin,Qout2,_d18Osoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else{
+	  _d18Osoil2_Out->matrix[r][c] = _d18Osoil2->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin2 > RNDOFFERR){
+	  Agein = (_FAgeLattoL2->matrix[r][c] + L1toL2*_Agesoil1_Out->matrix[r][c] + 
+					L3toL2 * _Agegroundwater->matrix[r][c])/ Qin2;
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_Agesoil2->matrix[r][c],_Agesoil2->matrix[r][c],
+		       Qin2,Agein,Qout2,_Agesoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else{
+	  _Agesoil2_Out->matrix[r][c] = _Agesoil2->matrix[r][c];
+	}
+      }
+    } // done soil mixing for layer 1 feeds deeper soil layers
+  
+  // -----------------------------------------------------
+  //
+  // Layer 2 feeds Layer 1
+  //
+  // -----------------------------------------------------
+
+  } else { // (layer 2 to layer 1)
+    if(L2toL3 > L3toL2){ // Layer 2 feeds layer 1 and layer 3
+      // -------------------------------------------------
+      // Layer 2 (From lateral --> Layer 3 and Layer 1)
+      // -------------------------------------------------
+      //      cout << "layer 2 --> layer 3 and layer 1" << endl;
+      Qin2  = LattoL2;
+      Qout2 = L2toLat + L2toL1 + L2toL3 + L2toChn;
+      if(ctrl.sw_2H){
+	if(Qin2 > RNDOFFERR){
+	  d2Hin2 =  _Fd2HLattoL2->matrix[r][c] / ( Qin2 );
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_d2Hsoil2->matrix[r][c],_d2Hsoil2->matrix[r][c],
+		       Qin2,d2Hin2,Qout2,_d2Hsoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else {
+	  _d2Hsoil2_Out->matrix[r][c] = _d2Hsoil2->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin2 > RNDOFFERR){
+	  d18Oin = _Fd18OLattoL2->matrix[r][c] / ( Qin2 );
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_d18Osoil2->matrix[r][c],_d18Osoil2->matrix[r][c],
+		       Qin2,d18Oin,Qout2,_d18Osoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Osoil2_Out->matrix[r][c] = _d18Osoil2->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin2 > RNDOFFERR){
+	  Agein = _FAgeLattoL2->matrix[r][c] / ( Qin2 );
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_Agesoil2->matrix[r][c],_Agesoil2->matrix[r][c],
+		       Qin2,Agein,Qout2,_Agesoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agesoil2_Out->matrix[r][c] = _Agesoil2->matrix[r][c];
+	}
+      }
+      // -------------------------------------------------
+      // Layer 3 (From layer 2 and lateral --> Leak)
+      // -------------------------------------------------
+      //      cout << "layer 3 (from layer 2)" << endl;
+      Qin3  = LattoGW + L2toL3;
+      Qout3 = GWtoLat + leak + GWtoChn;
+      if(ctrl.sw_2H){
+	if(Qin3 > RNDOFFERR){
+	  d2Hin3 =  (_Fd2HLattoGW->matrix[r][c] + _d2Hsoil2_Out->matrix[r][c]*L2toL3) / ( Qin3 );
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_d2Hsoil3->matrix[r][c],_d2Hsoil3->matrix[r][c],
+		       Qin3,d2Hin3,Qout3,_d2Hgroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _d2Hgroundwater->matrix[r][c] = _d2Hsoil3->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin3 > RNDOFFERR){	
+	  d18Oin = (_Fd18OLattoGW->matrix[r][c] +_d18Osoil2_Out->matrix[r][c]*L2toL3) / ( Qin3 );
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_d18Osoil3->matrix[r][c],_d18Osoil3->matrix[r][c],
+		       Qin3,d18Oin,Qout3,_d18Ogroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Ogroundwater->matrix[r][c] = _d18Osoil3->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin3 > RNDOFFERR){
+	  Agein = (_FAgeLattoGW->matrix[r][c] + _Agesoil2_Out->matrix[r][c]*L2toL3) / ( Qin3 );
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_Agesoil3->matrix[r][c],_Agesoil3->matrix[r][c],
+		       Qin3,Agein,Qout3,_Agegroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agegroundwater->matrix[r][c] = _Agesoil3->matrix[r][c];
+	}
+      }
+    } else { // fully upward flow (layer 3 => layer 2 => layer 1)
+      // -------------------------------------------------
+      // Layer 3 (from lateral to layer 2 and leak)
+      // -------------------------------------------------
+      //      cout << "layer 3 --> layer 2" << endl;
+      Qin3 = LattoGW;
+      Qout3 = GWtoLat + leak + L3toL2 + GWtoChn;
+      if(ctrl.sw_2H){
+	if(Qin3 > RNDOFFERR){
+	  d2Hin3 =  _Fd2HLattoGW->matrix[r][c] / Qin3;
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_d2Hsoil3->matrix[r][c],_d2Hsoil3->matrix[r][c],
+		       Qin3,d2Hin3,Qout3,_d2Hgroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _d2Hgroundwater->matrix[r][c] = _d2Hsoil3->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin3 > RNDOFFERR){
+	  d18Oin = _Fd18OLattoGW->matrix[r][c] / Qin3;
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_d18Osoil3->matrix[r][c],_d18Osoil3->matrix[r][c],
+		       Qin3,d18Oin,Qout3,_d18Ogroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Ogroundwater->matrix[r][c] = _d18Osoil3->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin3 > RNDOFFERR){
+	  Agein = _FAgeLattoGW->matrix[r][c] / Qin3;
+	  TracerMixing(bsn,ctrl,theta3_old*d3,_Agesoil3->matrix[r][c],_Agesoil3->matrix[r][c],
+		       Qin3,Agein,Qout3,_Agegroundwater->matrix[r][c],S3,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agegroundwater->matrix[r][c] = _Agesoil3->matrix[r][c];
+	}
+      }
+      // -------------------------------------------------
+      // Layer 2 (from lateral, Layer3 --> layer 1)
+      // -------------------------------------------------
+      //      cout << "layer 2 (from layer 3) --> layer 1" << endl;
+      Qin2 = LattoL2 + L3toL2;
+      Qout2 = L2toLat + L2toL1 + L2toChn;
+      if(ctrl.sw_2H){
+	if(Qin2 > RNDOFFERR){
+	  d2Hin2 = (_Fd2HLattoL2->matrix[r][c] + L3toL2 * _d2Hgroundwater->matrix[r][c])/ Qin2;
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_d2Hsoil2->matrix[r][c],_d2Hsoil2->matrix[r][c],
+		       Qin2,d2Hin2,Qout2,_d2Hsoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else {
+	  _d2Hsoil2_Out->matrix[r][c] = _d2Hsoil2->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin2 > RNDOFFERR){
+	  d18Oin = (_Fd18OLattoL2->matrix[r][c] + L3toL2 * _d18Ogroundwater->matrix[r][c])/ Qin2;
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_d18Osoil2->matrix[r][c],_d18Osoil2->matrix[r][c],
+		       Qin2,d18Oin,Qout2,_d18Osoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Osoil2_Out->matrix[r][c] = _d18Osoil2->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin2 > RNDOFFERR){
+	  Agein = (_FAgeLattoL2->matrix[r][c] + L3toL2 * _Agegroundwater->matrix[r][c])/ Qin2;
+	  TracerMixing(bsn,ctrl,theta2_old*d2,_Agesoil2->matrix[r][c],_Agesoil2->matrix[r][c],
+		       Qin2,Agein,Qout2,_Agesoil2_Out->matrix[r][c],S2,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agesoil2_Out->matrix[r][c] = _Agesoil2->matrix[r][c];
+	}
+      }
+    } // ends layer 2 feeding layer 1
+
+    if(L1toSrf > RNDOFFERR){ // exfiltration => estimate layer 1 first
+      // -----------------------------------------------
+      // Layer 1 (From layer 2 and lateral --> surface)
+      // -----------------------------------------------
+      //      cout << "layer 1 (from layer 2) --> surface" << endl;
+      exfilt = 1;
+      Qin1 = L2toL1 + LattoL1;
+      Qout1 = L1toSrf + L1toLat + L1toChn;
+      if(ctrl.sw_2H){
+	if(Qin1 > RNDOFFERR){
+	  d2Hin1 =  (_Fd2HLattoL1->matrix[r][c] + L2toL1 * _d2Hsoil2_Out->matrix[r][c]) / Qin1;
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_d2Hsoil1->matrix[r][c],_d2Hsoil1->matrix[r][c],
+		       LattoL1,d2Hin1,Qout1,_d2Hsoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _d2Hsoil1_Out->matrix[r][c]  = _d2Hsoil1->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin1 > RNDOFFERR){
+	  d18Oin = (_Fd18OLattoL1->matrix[r][c] + L2toL1 * _d18Osoil2_Out->matrix[r][c]) / Qin1;
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_d18Osoil1->matrix[r][c],_d18Osoil1->matrix[r][c],
+		       LattoL1,d18Oin,Qout1,_d18Osoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Osoil1_Out->matrix[r][c]  = _d18Osoil1->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin1 > RNDOFFERR){
+	  Agein = (_FAgeLattoL1->matrix[r][c] +L2toL1 * _Agesoil2_Out->matrix[r][c]) / Qin1;
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_Agesoil1->matrix[r][c],_Agesoil1->matrix[r][c],
+		       LattoL1,Agein,Qout1,_Agesoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agesoil1_Out->matrix[r][c]  = _Agesoil1->matrix[r][c];
+	}
+      }
+    } else {                 // infiltration => estimate surface first
+      // -----------------------------------------------
+      // Surface water mixing (From Lateral and snow --> Layer 1)
+      // -----------------------------------------------
+      exfilt = 0;
+      if(pond_old > RNDOFFERR){ // update the surface water if there is ponding water
+	FinSrf= SnowtoSrf + LattoSrf;                           // incoming water to the surface
+	if(ctrl.sw_2H){
+	  if(FinSrf > RNDOFFERR){
+	    d2HinS = (_Fd2HLattoSrf->matrix[r][c] + SnowtoSrf*_d2Hsnowmelt->matrix[r][c])/FinSrf;
+	    TracerMixing(bsn,ctrl,pond_old,_d2Hsurface->matrix[r][c],_d2Hsurface->matrix[r][c],
+			 FinSrf,d2HinS,SrftoL1,SrftoL1_d2,1.0,ctrl.toggle_mix,r,c);
+	  } else {
+	    SrftoL1_d2 = _d2Hsurface->matrix[r][c];
+	  }
+	}
+	if(ctrl.sw_18O){
+	  if(FinSrf > RNDOFFERR){
+	    d18Oin = (_Fd18OLattoSrf->matrix[r][c] + SnowtoSrf*_d18Osnowmelt->matrix[r][c])/FinSrf;
+	    TracerMixing(bsn,ctrl,pond_old,_d18Osurface->matrix[r][c],_d18Osurface->matrix[r][c],
+			 FinSrf,d18Oin,SrftoL1,SrftoL1_o18,1.0,ctrl.toggle_mix,r,c);
+	  } else {
+	    SrftoL1_o18 = _d18Osurface->matrix[r][c];
+	  }
+	}
+	if(ctrl.sw_Age){
+	  if(FinSrf > RNDOFFERR){
+	    Agein = (_FAgeLattoSrf->matrix[r][c] + SnowtoSrf*_Agesnowmelt->matrix[r][c])/FinSrf;
+	    TracerMixing(bsn,ctrl,pond_old,_Agesurface->matrix[r][c],_Agesurface->matrix[r][c],
+			 FinSrf,Agein,SrftoL1,SrftoL1_Age,1.0,ctrl.toggle_mix,r,c);
+	  } else {
+	    SrftoL1_Age = _Agesurface->matrix[r][c];
+	  }
+	}
+      } // end surface water
+      // -----------------------------------------------
+      // Layer 1 (From layer 2, lateral, and surface)
+      // -----------------------------------------------
+      //      cout << "layer 1 (from layer 2 and surface)" << endl;
+      Qin1 = LattoL1 + SrftoL1 + L2toL1;
+      Qout1 = L1toLat + L1toChn;
+      if(ctrl.sw_2H){
+	if(Qin1 > RNDOFFERR){
+	  d2Hin1 = (_Fd2HLattoL1->matrix[r][c] + SrftoL1_d2 * SrftoL1 + L2toL1*_d2Hsoil2_Out->matrix[r][c])/ Qin1;
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_d2Hsoil1->matrix[r][c],_d2Hsoil1->matrix[r][c],
+		       Qin1,d2Hin1,Qout1,_d2Hsoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else{
+	  _d2Hsoil1_Out->matrix[r][c] = _d2Hsoil1->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_18O){
+	if(Qin1 > RNDOFFERR){
+	  d18Oin = (_Fd18OLattoL1->matrix[r][c] + SrftoL1_o18 * SrftoL1 + L2toL1*_d18Osoil2_Out->matrix[r][c])/ Qin1;
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_d18Osoil1->matrix[r][c],_d18Osoil1->matrix[r][c],
+		       Qin1,d18Oin,Qout1,_d18Osoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _d18Osoil1_Out->matrix[r][c] = _d18Osoil1->matrix[r][c];
+	}
+      }
+      if(ctrl.sw_Age){
+	if(Qin1 > RNDOFFERR){
+	  Agein = (_FAgeLattoL1->matrix[r][c] + SrftoL1_Age * SrftoL1 + L2toL1*_Agesoil2_Out->matrix[r][c])/ Qin1;
+	  TracerMixing(bsn,ctrl,theta1_old*d1,_Agesoil1->matrix[r][c],_Agesoil1->matrix[r][c],
+		       Qin1,Agein,Qout1,_Agesoil1_Out->matrix[r][c],S1,ctrl.toggle_mix,r,c);
+	} else {
+	  _Agesoil1_Out->matrix[r][c] = _Agesoil1->matrix[r][c];
+	}
+      }
+    } // end layer 1 and surface
+  } // ends the soil tracer mixing
+
+
+  // ------------------------------------------------------------------------
+  // Exfiltration (done outside for statement, no dependency of soil)
+  // ------------------------------------------------------------------------
+  if(exfilt){
+    // -------------------------------------------------
+    // Surface water mixing (From Lateral and Layer 1)
+    // -------------------------------------------------
+    FinSrf= SnowtoSrf + LattoSrf;                             // incoming water to the surface
+    if(FinSrf > RNDOFFERR){                                   // Only mix if there is any flux 
+      FinSrf = SnowtoSrf + LattoSrf + L1toSrf;                // Reassign inflow to include exfiltration
+      if(ctrl.sw_2H)
+	_d2Hsurface->matrix[r][c] = (_Fd2HLattoSrf->matrix[r][c] + SnowtoSrf*_d2Hsnowmelt->matrix[r][c] + 
+				     L1toSrf*_d2Hsoil1_Out->matrix[r][c])/FinSrf;
+      if(ctrl.sw_18O)
+	_d18Osurface->matrix[r][c] = (_Fd18OLattoSrf->matrix[r][c] + SnowtoSrf*_d18Osnowmelt->matrix[r][c] + 
+				      L1toSrf*_d18Osoil1_Out->matrix[r][c])/FinSrf;
+      if(ctrl.sw_Age)
+	_Agesurface->matrix[r][c] = (_FAgeLattoSrf->matrix[r][c] + SnowtoSrf*_Agesnowmelt->matrix[r][c] + 
+				     L1toSrf*_Agesoil1_Out->matrix[r][c])/FinSrf;
+    } else {                                                  // water to the surface is just the exfiltrated water
+      if(ctrl.sw_2H)
+	_d2Hsurface->matrix[r][c] = _d2Hsoil1_Out->matrix[r][c];
+      if(ctrl.sw_18O)
+	_d18Osurface->matrix[r][c] = _d18Osoil1_Out->matrix[r][c];
+      if(ctrl.sw_Age)
+	_Agesurface->matrix[r][c] =  _Agesoil1_Out->matrix[r][c];
+    }
+  } // end exfiltration 
+
+  // ------------------------------------------------------------------------
+  // Bedrock leakage
+  // ------------------------------------------------------------------------
+  //  Qleak = (bsn.getBedrockLeakage()->matrix[r][c]*dt) + leak;
+  //  cout << "Total leak: " << Qleak << " |current leak: " << leak << endl;
+  if(ctrl.sw_2H){
+    if(reinf == 0)
+      _d2Hleakage->matrix[r][c] = _d2Hgroundwater->matrix[r][c];
+  }
+  if(ctrl.sw_18O){
+    if(reinf == 0)
+      _d18Oleakage->matrix[r][c] = _d18Ogroundwater->matrix[r][c];
+  }
+  if(ctrl.sw_Age){
+    if(reinf == 0)
+      _Ageleakage->matrix[r][c] = _Agegroundwater->matrix[r][c];
+  }
+  /*
+  cout << "GW: " << _d2Hgroundwater->matrix[r][c] << " |leak: " << _d2Hleakage->matrix[r][c] << endl;
+  cout << "Srf:" << _d2Hsurface->matrix[r][c] << endl;
+  cout << "L1: " << _d2Hsoil1->matrix[r][c] << " L2:" <<  _d2Hsoil2->matrix[r][c] << " L3:" <<  _d2Hsoil3->matrix[r][c] << endl;
+
+  V1_new = theta1_old*d1 + Qin1 - Qout1;
+  cout << "Layer 1(MBERR): " << 
+    (Qin1*d2Hin1 - Qout1*_d2Hsoil1_Out->matrix[r][c] + theta1_old*d1*d2Hsoil1_init - _d2Hsoil1->matrix[r][c]*V1_new)/(Qin1*d2Hin1 + theta1_old*d1*d2Hsoil1_init) << endl;
+  V2_new = theta2_old*d2 + Qin2 - Qout2;
+  cout << "Layer 2(MBERR): " << 
+    (Qin2*d2Hin2 - Qout2*_d2Hsoil2_Out->matrix[r][c] + theta2_old*d2*d2Hsoil2_init - _d2Hsoil2->matrix[r][c]*V2_new)/(Qin2*d2Hin2 + theta2_old*d2*d2Hsoil2_init) << endl;
+  V3_new = theta3_old*d3 + Qin3 - Qout3;
+  cout << "Layer 3(MBERR): " << 
+    (Qin3*d2Hin3 - Qout3*_d2Hgroundwater->matrix[r][c] + theta3_old*d3*d2Hsoil3_init - _d2Hsoil3->matrix[r][c]*V3_new)/(Qin3*d2Hin3 + theta3_old*d3*d2Hsoil3_init) << endl;
+  */
+}
+

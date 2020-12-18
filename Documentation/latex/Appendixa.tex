@@ -1,0 +1,331 @@
+\appendix
+\chapter{Configuration file keywords}
+\begin{longtable}{|p{4cm} l l p{5.5cm}|}
+%\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Keyword} & \textbf{Type} & \textbf{Units} & \textbf{Description}\\ 
+
+\hline  
+Maps\_Folder & System Path & N/A & Path to folder with land surface information \\
+\hline 
+Clim\_Maps\_Folder & System Path & N/A & Path to folder with Climate information \\
+\hline
+Output\_Folder & System Path & N/A & Path to folder where outputs will be written \\
+\hline
+\multicolumn{4}{l}{\textbf{Options}} \\
+\hline
+MapTypes & option & N/A & Format of maps. In this version the format is \textit{csf} (PCRaster).  \\
+\hline
+Species\_State \_Variable\_Input\_Method & option & N/A & Specifies the input format of the vegetation state variables. Options are \textit{table} or \textit{maps}\\
+\hline
+Reinfiltration & option & N/A & Switch 1/0 to turn reinfiltration on (1) or off (0)\\
+\hline
+Aerodyn\_resist\_opt & option & N/A & Switches between different aerodynamic resistance formulations. 0: Penman; 1: Thom and Oliver (1977) \\
+\hline
+Soil\_resistance\_opt & option & N/A & Switches between different soil resistance formulations. 0: Passerat de Silans et al 1989; 1: Ivanov et al (2008) \\
+\hline
+\multicolumn{4}{l}{\textbf{Time controls}} \\
+\hline
+Simul\_start & Integer & Seconds & Time of simulation start. In the current version this value must be 0 \\
+\hline
+Simul\_end  & Integer & Seconds & Time when simulation ends in seconds. Since the start time is always 0, this value indicates the total simulated time \\
+\hline
+Simul\_tstep & Integer & Seconds & Size of the integration time step \\
+\hline
+Clim\_input\_tstep & Integer & Seconds & Time step of climate forcing. Typically it is the same as \textit{Simul\_tstep} but can be larger (i.e. climate inputs are daily but we are using an hourly integration time step). \textit{Clim\_input\_tstep} cannot be smaller than \textit{Simul\_tstep} \\
+\hline
+Report\_interval & Integer & Seconds & Intervals between outputs. \textit{Report\_interval} cannot be smaller than \textit{Simul\_tstep} and typically it is equal to \textit{Simul\_tstep}  \\
+\hline
+\multicolumn{4}{l}{\textbf{Climate information (maps and binary files must be placed in \textit{Clim\_Maps\_Folder})} } \\
+\hline
+Snow\_rain\_temp\_threshold & scalar & $^{\circ}C$ & Air temperature threshold for snow/rain transition\\
+\hline
+ClimateZones &  Map file name & integers & Map identifying the climate zones\\
+\hline
+Isohyet\_map &  Map file name & - & This map allows to redistribute rainfall within a climate zone. It is a map with multiplication factors for rain in a given pixel. A map containing 1 over the domain has the effect of overriding this  input (does not modify the precipitation input)\\
+\hline
+Precipitation & Binary climate file & $ms^{-1}$ & Precipitation input \\
+\hline
+AirTemperature & Binary climate file & $^{\circ}C$ & Average air temperature\\
+\hline
+MaxAirTemp & Binary climate file & $^{\circ}C$ & Maximum air temperature\\
+\hline
+MinAirTemp& Binary climate file & $^{\circ}C$ & Maximum air temperature\\
+\hline
+RelativeHumidity& Binary climate file & $kPakPa^{-1}$ & Average air temperature\\
+\hline
+WindSpeed& Binary climate file & $ms^{-1}$ & Wind speed\\
+\hline
+IncomingLongWave& Binary climate file & $Wm^{-2}$ & Incoming long wave radiation\\
+\hline
+IncomingShortWave& Binary climate file & $Wm^{-2}$ & Incoming solar radiation\\
+\hline
+\multicolumn{4}{l}{\textbf{Drainage network (Files must be located in \textit{Maps\_Folder})} } \\
+\hline
+local\_drain\_direc & Map file name & - & D8 steepest descent ldd \\
+\hline
+channel\_width & Map file name & $m$ & mask with width of channel network. Pixels with no channel must be 0 or nodata. Positive numbers indicate the width of the channel in the pixel \\
+\hline
+channel\_gw\_transfer\_param & Map file name &  $ m^{-1} $ & Coefficient controlling transfers of water from the subsurface system to the channel \\
+\hline
+mannings\_n & Map file name &  $ sm^{-1/3} $ & Manning's n roughness coefficient for channel \\
+\hline
+\newpage
+\multicolumn{4}{l}{\textbf{Initial conditions for soil states  (Files must be located in \textit{Maps\_Folder})}} \\
+\hline
+Streamflow & Map file name & $ m^3s^{-1} $& Streamflow\\
+\hline
+snow\_water\_equivalent & Map file name & $ m $& Snow water equivalent\\
+\hline
+Soil\_moisture\_1 & Map file name & $ m^3m^{-3} $& Volumetric soil water content for topmost soil layer\\
+\hline
+Soil\_moisture\_2 & Map file name & $ m^3m^{-3} $& Volumetric soil water content for layer 3\\
+\hline
+Soil\_moisture\_3 & Map file name & $ m^3m^{-3} $& Volumetric soil water content of bottommost layer\\
+\hline
+Soil\_temperature & Map file name & $ ^{\circ}C $& Soil temperature at boundary of thermal layer \\
+\hline
+\multicolumn{4}{l}{\textbf{Soil parameters (Files must be located in \textit{Maps\_Folder})}} \\
+\hline
+DEM &  Map file name & $m$ & Digital elevation model\\
+\hline
+Slope& Map file name & $mm^{-1}$ & Local terrain slope. Rise over run\\
+\hline
+Horiz\_Hydraulic\_Conductivity & Map file name & $ms^{-1}$ & Effective soil hydraulic conductivity\\
+\hline
+Vert\_Horz\_Anis\_ratio & Map file name & $[-]$ & Ratio of vertical to horizontal hydraulic conductivity\\
+\hline
+Terrain\_Random\_Roughness & Map file name & $m$ & Local surface roughness \\
+\hline
+Porosity & Map file name & - & Soil porosity \\
+\hline
+Air\_entry\_pressure & Map file name & $m$ & Soil air entry pressure \\
+\hline
+Brooks\_Corey\_lambda & Map file name & - & Pore size distribution \\
+\hline
+Residual\_soil\_moisture & Map file name & $m^{3}m^{-3}$ & Minimum allowed volumetric soil water content \\
+\hline
+Soil\_depth & Map file name & $m$ & Soil depth \\
+\hline
+Depth\_soil\_layer\_1 & Map file name & $m$ & Depth of topmost soil layer \\
+\hline
+Depth\_soil\_layer\_2 & Map file name & $m$ & Depth of second soil layer \\
+\hline
+Veget\_water\_use\_param1 & Map file name & $m$ & Vegetation water use parameter as per Landsberg and Waring (1997) \\
+\hline
+Veget\_water\_use\_param2 & Map file name & $m$ & Vegetation water use parameter as per Landsberg and Waring (1997) \\
+\hline
+Fraction\_roots\_soil\_layer\_1 & Map file name & - & Fraction of roots in topmost soil layer. Sum of fraction of roots in soil layer 1 and 2 must be less than 1 \\
+\hline
+Fraction\_roots\_soil\_layer\_2 & Map file name & - & Fraction of roots in second soil layer. Sum of fraction of roots in soil layer 1 and 2 must be less than 1 \\
+\hline
+Albedo & Map file name & - & Surface albedo \\
+\hline
+Surface\_emissivity & Map file name & - & Surface emissivity/absorptivity \\
+\hline
+Dry\_Soil\_Heat\_Capacity & Map file name & $ Jm^{-3}K^{-1} $ & Heat capacity of soil solid particles \\
+\hline
+Dry\_Soil\_Therm\_Cond & Map file name & $ Wm^{-1}K^{-1} $ & Thermal conductivity of soil solid particles \\
+\hline
+Damping\_depth & Map file name & $ m $ & Depth of bottom of second soil thermal layer \\
+\hline
+Temp\_at\_damp\_depth & Map file name & $ ^{\circ}C $ & Soil temperature at damping depth \\
+\hline
+Snow\_Melt\_Coeff & Map file name & $ m^{\circ}C^{-1} $ & Snowmelt coefficient factor \\
+\hline
+\newpage
+\multicolumn{4}{l}{\textbf{Forest parameters (Files must be located in \textit{Maps\_Folder})}} \\
+\hline
+ForestPatches &  Map file name & integers & Map identifying forest categories (patches)\\
+\hline
+Number\_of\_Species & Integer & -  & Number of vegetation types included in the simulation \\
+\hline
+Species\_Parameters & Parameter table & - & Table containing parameter information for each simulated vegetation type \\
+\hline
+\multicolumn{4}{l}{Tables needed only if \textsf{Species\_State\_Variable\_Input\_Method=tables}} \\
+\hline
+Species\_Proportion\_Table & Variable table & $ m^{2}m^{-2}  $ & Table with initial proportion of covered area (canopy cover) for each vegetation type with respect to cell area \\
+\hline
+Species\_StemDensity\_Table & Variable table & $ trees m^{-2}  $ & Table with initial tree density per cell for each vegetation type \\
+\hline
+Species\_LAI\_Table & Variable table & $ m^{2}m^{-2}  $ & Table with initial leaf area index for each vegetation type \\
+\hline
+Species\_AGE\_Table & Variable table & $ years  $ & Table with initial average age each vegetation type \\
+\hline
+Species\_BasalArea\_Table & Variable table & $ m^{2}  $ & Table with initial total basal area per vegetation type \\
+\hline
+Species\_Height\_table & Variable table & $ m  $ & Table with initial effective height per vegetation type \\
+\hline
+Species\_RootMass\_table & Variable table & $ gm^{-3}  $ & Table with initial root mass per volume of soil for each vegetation type \\
+\hline
+\multicolumn{4}{l}{Map report switches} \\
+\hline
+Report\_Long\_Rad\_Down & switch & $Wm^{-2}$ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Ldown}  \\
+\hline
+Report\_Short\_Rad\_Down & switch & $Wm^{-2}$ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Sdown}  \\
+\hline
+Report\_Precip& switch & $ms^{-1}$ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Pp}  \\
+\hline
+Report\_Rel\_Humidity& switch & $ Pa^{1}Pa^{-1} $ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{RH}  \\
+\hline
+Report\_Wind\_Speed& switch & $ ms^{-1} $ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{WndSp}  \\
+\hline
+Report\_AvgAir\_Temperature & switch & $ ^{\circ}C $ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Tp}  \\
+\hline
+Report\_MinAir\_Temperature& switch & $ ^{\circ}C $ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{TpMin}  \\
+\hline
+Report\_MaxAir\_Temperature& switch & $ ^{\circ}C $ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{TpMax}  \\
+\hline
+Report\_SWE& switch & $ m $ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{SWE}  \\
+\hline
+Report\_Infilt\_Cap & switch & $ ms^{-1} $ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{If}  \\
+\hline
+Report\_Infilt\_Cap & switch & $ ms^{-1} $ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{If}  \\
+\hline
+Report\_Streamflow & switch & $ m^{3}s^{-1} $ & 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Q}  \\
+\hline
+Report\_Soil\_Water\_Content\_Average & switch & $ m^{3}m^{-3} $ & 1: Average volumetric water content for entire soil profile. Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Theta}  \\
+\hline
+Report\_Soil\_Water\_Content\_L1 & switch & $ m^{3}m^{-3} $ & 1: Volumetric water content for topmost soil layer. Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Theta}  \\
+\hline
+Report\_Soil\_Water\_Content\_L2 & switch & $ m^{3}m^{-3} $ & 1: Volumetric water content for second soil layer. Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Theta}  \\
+\hline
+Report\_Soil\_Water\_Content\_L3 & switch & $ m^{3}m^{-3} $ & 1: Volumetric water content for bottommost soil layer. Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Theta}  \\
+\hline
+Report\_Soil\_Sat\_Deficit & switch & $ m $ & Meters of water needed to saturate soil. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{SatDef}  \\
+Report\_Soil\_ETP & switch & $ ms^{-1} $ & Soil evaporation. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Evap}  \\
+\hline
+Report\_Soil\_Net\_RadReport & switch & $ Wm^{-2} $ & Soil net radiation. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{NetR}  \\
+\hline
+Report\_Soil\_LESoil & switch & $ Wm^{-2} $ & Latent heat for surface layer. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{LE}  \\
+\hline
+Report\_Sens\_Heat & switch & $ Wm^{-2} $ & Sensible heat for surface layer. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{SensH}  \\
+\hline
+Report\_Grnd\_Heat & switch & $ Wm^{-2} $ & Ground heat. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{GrndH}  \\
+\hline
+Report\_Snow\_Heat& switch & $ Wm^{-2} $ & Turbulent heat exchange with snowpack. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{SnowH}  \\
+\hline
+Report\_Soil\_Temperature & switch & $ ^{\circ}C $ &  Soil temperature at the bottom of first thermal layer. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Ts}  \\
+\hline
+Report\_Skin\_Temperature & switch & $ ^{\circ}C $ &  Soil skin temperature. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Tskin}  \\
+\hline
+Report\_Veget\_frac& switch & $ m^{2}m^{-2} $ &  Fraction of cell covered by canopy of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{p[\textit{n}]}  \\
+\hline
+Report\_Stem\_Density & switch & $ stems m^{-2} $ &  Density of individuals of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{ntr[\textit{n}]} \\
+\hline
+Report\_Leaf\_Area\_Index  & switch & $  m^{2}m^{-2} $ &  Leaf area index of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{lai[\textit{n}]} \\
+\hline
+Report\_Stand\_Age  & switch & $ years $ &  Age of stand of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{age[\textit{n}]} \\
+\hline
+Report\_Canopy\_Conductance & switch & $ ms^{-1} $ &  Canopy conductance for vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{gc[\textit{n}]} \\
+\hline
+Report\_GPP & switch & $ gCm^{-2} $ &  Gross primary production for vegetation type \textit{n} during the time step. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{gpp[\textit{n}]} \\
+\hline
+Report\_NPP & switch & $ gC^{-1}m^{-2} $ &  Net primary production for vegetation type \textit{n} during the time step. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{npp[\textit{n}]} \\
+\hline
+Report\_Basal\_Area & switch & $ m^{2} $ &  Total basal area of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{bas[\textit{n}]} \\
+\hline
+Report\_Tree\_Height & switch & $ m $ &  Height of stand of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{hgt[\textit{n}]} \\
+\hline
+Report\_Root\_Mass & switch & $ gm^{-3} $ &  Root mass per volume of soil vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{root[\textit{n}]} \\
+\hline
+Report\_Canopy\_Temp& switch & $ ^{\circ}C $ &  Canopy temperature of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Tc[\textit{n}]} \\
+\hline
+Report\_Canopy\_NetR& switch & $ Wm^{-2} $ &  Canopy temperature of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Tc[\textit{n}]} \\
+\hline
+Report\_Canopy\_LE & switch & $ Wm^{-2} $ & Latent heat for canopy layer of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{LEc[\textit{n}]} \\
+\hline
+Report\_Canopy\_Sens\_Heat & switch & $ Wm^{-2} $ & Sensible heat for canopy layer of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Hc[end{appendix}textit{n}]} \\
+\hline
+Report\_Canopy\_Water\_Stor & switch & $ m $ & Water storage in canopy layer of vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Cs[\textit{n}]} \\
+\hline
+Report\_Transpiration& switch & $ ms^{-1} $ & Transpiration from vegetation type \textit{n}. 1: Report map for this variable - 0: Switch off reporting for this variable. Root name \textsf{Trp[\textit{n}]} \\
+\hline
+\multicolumn{4}{l}{Time series report switches} \\
+\hline
+Ts\_OutletDischarge& switch & $ m^{3}s^{-1} $ & 1: Turns on reporting of discharge at cells with \textit{ldd} value = 5 (outlets and sinks) - 0: Turns off report. File name \textsf{Discharge.tab} \\
+\hline
+TS\_mask & Map file name & nominal & Map identifying cells for which state variables will be reported. Map should be zero every=where expect for target cells. which are identified with integer IDs ($\geq 1$). A maximum of 32 cells can be reported. \\   
+\hline
+Ts\_Long\_Rad\_Down & Time series table & $ Wm^{-2} $ & Time series of incoming long wave radiation to the surface layer for cells identified in \textsf{TS\_mask}. File name \textsf{Ldown.tab} \\
+\hline
+Ts\_Short\_Rad\_Down& Time series table & $ Wm^{-2} $ & Time series of incoming short wave radiation to the surface layer for cells identified in \textsf{TS\_mask}. File name \textsf{Sdown.tab} \\
+\hline
+Ts\_Precip& Time series table & $ ms^{-1} $ & Time series of atmospheric long wave radiation for cells identified in \textsf{TS\_mask}. File name \textsf{Precip.tab} \\
+\hline
+Ts\_Rel\_Humidity & Time series table & $ PaPa^{-1} $ & Time series of relative humidity at the reference height for cells identified in \textsf{TS\_mask}. File name \textsf{RelHumid.tab} \\
+\hline
+Ts\_Wind\_Speed & Time series table & $ ms^{-1} $ & Time series of wind speed at reference height for cells identified in \textsf{TS\_mask}. File name \textsf{WindSpeed.tab} \\
+\hline
+Ts\_AvgAir\_Temperature & Time series table & $ ^{\circ}C $ & Time series of average temperature at reference height for cells identified in \textsf{TS\_mask}. File name \textsf{AvgTemp.tab} \\
+\hline
+Ts\_MinAir\_Temperature & Time series table & $ ^{\circ}C $ & Time series of minimum temperature at reference height for cells identified in \textsf{TS\_mask}. File name \textsf{MinTemp.tab} \\
+\hline
+Ts\_MaxAir\_Temperature  & Time series table & $ ^{\circ}C $ & Time series of maximum temperature at reference height for cells identified in \textsf{TS\_mask}. File name \textsf{MaxTemp.tab} \\
+\hline
+Ts\_SWE& Time series table & $ m $ & Time series of soil water equivalent at cells identified in \textsf{TS\_mask}. File name \textsf{SWE.tab} \\
+\hline
+Ts\_Infilt\_Cap & Time series table & $ ms^{-1} $ & Time series of infiltration capacity at cells identified in \textsf{TS\_mask}. File name \textsf{InfiltCap.tab} \\
+\hline
+Ts\_Streamflow & Time series table & $ m^{3}s^{-1} $ &  Time series of streamflow at cells identified in \textsf{TS\_mask}. File name \textsf{Streamflow.tab}  \\
+\hline
+Ts\_Soil\_Water\_Content\_Average & Time series table & $ m^{3}m^{-3} $ & Times series of Average volumetric water content for entire soil profile at cells identified in \textsf{TS\_mask}. File name \textsf{Theta.tab}  \\
+\hline
+Ts\_Soil\_Water\_Content\_L1 & Time series table & $ m^{3}m^{-3} $ &Times series of Average volumetric water content for topsoil at cells identified in \textsf{TS\_mask}. File name \textsf{ThetaL1.tab}  \\
+\hline
+Ts\_Soil\_Water\_Content\_L2 & Time series table & $ m^{3}m^{-3} $ &Times series of Average volumetric water content for second soil layer at cells identified in \textsf{TS\_mask}. File name \textsf{ThetaL2.tab}  \\
+\hline
+Ts\_Soil\_Water\_Content\_L3 & Time series table & $ m^{3}m^{-3} $ &Times series of Average volumetric water content for bottommost soil layer at cells identified in \textsf{TS\_mask}. File name \textsf{ThetaL3.tab}  \\
+\hline
+Ts\_Soil\_Sat\_Deficit& Time series table & $ m $ & Time series of soil water deficit defined as the water depth needed to saturate cells identified in \textsf{TS\_mask}. File name \textsf{SoilSatDef.tab} \\
+\hline
+Ts\_Soil\_ETP& Time series table & $ ms^{-1} $ & Time series of soil evaporation at cells identified in \textsf{TS\_mask}. File name \textsf{Evap.tab} \\
+\hline
+Ts\_Soil\_Net\_Rad& Time series table & $ Wm^{-2} $ & Time series of net radiation for surface layer at cells identified in \textsf{TS\_mask}. File name \textsf{NetRad.tab} \\
+\hline
+Ts\_Soil\_LE& Time series table & $ Wm^{-2} $ & Time series of latent heat for surface layer at cells identified in \textsf{TS\_mask}. File name \textsf{LatHeat.tab} \\
+\hline
+Ts\_Sens\_Heat& Time series table & $ Wm^{-2} $ & Time series of sensible heat for surface layer at cells identified in \textsf{TS\_mask}. File name \textsf{SensHeat.tab} \\
+\hline
+Ts\_Grnd\_Heat& Time series table & $ Wm^{-2} $ & Time series of ground heat at cells identified in \textsf{TS\_mask}. File name \textsf{GrndHeat.tab} \\
+\hline
+Ts\_Snow\_Heat& Time series table & $ Wm^{-2} $ & Time series of heat exchanges with snowpack at cells identified in \textsf{TS\_mask}. File name \textsf{SnowHeat.tab} \\
+\hline
+Ts\_Soil\_Temperature& Time series table & $ ^{\circ}C $ & Time series of soil temperature at cells identified in \textsf{TS\_mask}. File name \textsf{SoilTemp.tab} \\
+\hline
+Ts\_Skin\_Temperature& Time series table & $ ^{\circ}C $ & Time series of soil skin temperature at cells identified in \textsf{TS\_mask}. File name \textsf{SkinTemp.tab} \\
+\hline
+Ts\_Veget\_frac& Time series table & $ m^{2}m^{-2} $ & Time series of fractions occupied by vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{p[\textit{n}].tab} \\
+\hline
+Ts\_Stem\_Density & Time series table & $ stems m^{-2} $ & Time series of stem density of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{num\_of\_trees[\textit{n}].tab} \\
+\hline
+Ts\_Leaf\_Area\_Index& Time series table & $ m^{2}m^{-2} $ & Time series of leaf area index of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{lai[\textit{n}].tab} \\
+\hline
+Ts\_Canopy\_Conductance& Time series table & $ ms^{-1} $ & Time series of canopy conductance of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{CanopyConduct[\textit{n}].tab} \\
+\hline
+Ts\_GPP & Time series table & $ gCm^{-2} $ & Time series of gross primary production of vegetation type \textit{n} during the current time step at cells identified in \textsf{TS\_mask}. File name \textsf{GPP[\textit{n}].tab}\\
+\hline
+Ts\_NPP & Time series table & $ gCm^{-2} $ & Time series of net primary production of vegetation type \textit{n} during the current time step at cells identified in \textsf{TS\_mask}. File name \textsf{NPP[\textit{n}].tab}\\
+\hline
+Ts\_Basal\_Area & Time series table & $ m^{-2} $ & Time series of total basal area of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{BasalArea[\textit{n}].tab}\\
+\hline
+Ts\_Tree\_Height & Time series table & $ m $ & Time series of effective tree height of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{TreeHeight[\textit{n}].tab}\\
+\hline
+Ts\_Root\_Mass& Time series table & $ gm^{-3} $ & Time series of root density (mass per volume of soil) of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{RootMass[\textit{n}].tab}\\
+\hline
+Ts\_Canopy\_Temp& Time series table & $ ^{\circ}C $ & Time series of canopy temperature of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{CanopyTemp[\textit{n}].tab}\\
+\hline
+Ts\_Canopy\_NetR& Time series table & $ Wm^{-2} $ & Time series of net radiation at canopy layer of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{CanopyNetRad[\textit{n}].tab}\\
+\hline
+Ts\_Canopy\_LE& Time series table & $ Wm^{-2} $ & Time series of latent heat at canopy layer of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{CanopyLatHeat[\textit{n}].tab}\\
+\hline
+Ts\_Canopy\_Sens\_Heat & Time series table & $ Wm^{-2} $ & Time series of sensible heat at canopy layer of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{CanopySensHeat[\textit{n}].tab}\\
+\hline
+Ts\_Canopy\_Water\_Stor & Time series table & $ m $ & Time series of water storage at canopy layer of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{CanopyWaterStor[\textit{n}].tab}\\
+\hline
+Ts\_Transpiration & Time series table & $ ms^{-1} $ & Time series of transpiration for canopy layer of vegetation type \textit{n} at cells identified in \textsf{TS\_mask}. File name \textsf{Transpiration[\textit{n}].tab}\\
+
+
+\hline 
+%\end{tabular} 
+\end{longtable}

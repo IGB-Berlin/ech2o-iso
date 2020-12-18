@@ -1,0 +1,225 @@
+\appendix
+\chapter{Configuration file example}
+\label{appendixb}
+\begin{verbatim}
+#ECH2O configuration file v1.41
+
+#
+#Folder section
+#
+
+Maps_Folder = C:\Documents and Settings\marco.maneta\My Documents\Simulations\LostHorse\TwinLakesDebug\Spatial
+Clim_Maps_Folder = C:\Documents and Settings\marco.maneta\My Documents\Simulations\LostHorse\TwinLakesDebug\Climate
+Output_Folder = C:\Documents and Settings\marco.maneta\My Documents\Simulations\LostHorse\TwinLakesDebug\Results
+
+MapTypes = csf  #csf or ascii
+Species_State_Variable_Input_Method = tables
+
+#
+#Options section
+#
+
+#boolean switches
+Reinfiltration = 1
+Channel = 1
+
+#toggle switches
+Aerodyn_resist_opt = 0  #0 = Pen-Mont option - 1 = Thom and Oliver 1977
+Soil_resistance_opt = 1 #0 = Passerat de Silans et al 1989 - 1 = Ivanov et al 
+
+#
+#Time variables section
+#
+
+Simul_start = 0
+Simul_end = 1119600
+Simul_tstep = 3600
+Clim_input_tstep = 3600 
+Report_interval = 3600
+
+
+#
+#Base map section
+#
+DEM = DEM.map
+ClimateZones = ClimZones.map
+ForestPatches = patches.map
+
+#
+#Climate input information
+#
+Isohyet_map = isohyet.map
+Snow_rain_temp_threshold = snow_rain_thr.map
+Precipitation = Precip.bin
+AirTemperature = Tavg.bin
+MaxAirTemp = Tmax.bin
+MinAirTemp = Tmin.bin
+RelativeHumidity = RH.bin
+WindSpeed = Windspeed.bin
+IncomingLongWave = Ldown.bin
+IncomingShortWave = Sdown.bin
+
+Albedo = albedo.map
+Surface_emissivity = emissivity.map
+Dry_Soil_Heat_Capacity = soilheatcap.map
+Dry_Soil_Therm_Cond = soilthermalK.map
+Damping_depth = dampdepth.map
+Temp_at_damp_depth = temp_damp.map
+Snow_Melt_Coeff = snowmeltCoeff.map
+
+#
+# Drainage network
+#
+
+local_drain_direc = ldd.map
+channel_width = chanwidth.map
+channel_gw_transfer_param = chanparam.map
+mannings_n = chanmanningn.map
+
+#
+#initial conditions
+#
+Streamflow = streamflow.map
+snow_water_equivalent = swe.map
+Soil_moisture_1 = soilmoist.map
+Soil_moisture_2 = soilmoist.map
+Soil_moisture_3 = soilmoist.map
+
+Soil_temperature = soiltemp.map
+
+
+
+#
+#Soil parameters
+#
+Slope = slope.map
+Hydraulic_Conductivity = Ksat.map
+Terrain_Random_Roughness = randrough.map
+Porosity = poros.map
+Air_entry_pressure = psi_ae.map
+Brooks_Corey_lambda = BClambda.map
+Residual_soil_moisture = theta_r.map
+Soil_depth = soildepth.map
+Depth_soil_layer_1 = depth_soil1.map
+Depth_soil_layer_2 = depth_soil2.map
+Veget_water_use_param1 = Wc.map
+Veget_water_use_param2 = Wp.map
+Fraction_roots_soil_layer_1 = rootfrac1.map
+Fraction_roots_soil_layer_2 = rootfrac2.map
+Soil_bedrock_leakance = leakance.map
+
+
+#
+#Forest Parameters
+#
+Number_of_Species = 1
+Species_Parameters = SpeciesParams.tab
+#Tables below are only needed if Species_State_Variable_Input_Method = tables
+Species_Proportion_Table = SpecsProp.tab
+Species_StemDensity_Table = SpecsStemDens.tab
+Species_LAI_Table = SpecsLAI.tab
+Species_AGE_Table = SpecsAge.tab
+Species_BasalArea_Table = SpeciesBasalArea.tab
+Species_Height_table = SpeciesHeight.tab
+Species_RootMass_table = SpecsRootDensity.tab
+
+
+#
+#Report map section
+#
+
+Report_Long_Rad_Down = 0
+Report_Short_Rad_Down = 0
+Report_Precip = 0
+Report_Rel_Humidity = 0
+Report_Wind_Speed = 0
+Report_AvgAir_Temperature = 0
+Report_MinAir_Temperature = 0
+Report_MaxAir_Temperature = 0
+
+Report_SWE = 1
+Report_Infilt_Cap = 0
+Report_Streamflow = 1
+Report_Soil_Water_Content_Average = 1
+Report_Soil_Water_Content_L1 = 1 
+Report_Soil_Water_Content_L2 = 1
+Report_Soil_Water_Content_L3 = 1
+Report_Soil_Sat_Deficit = 1
+Report_Ground_Water = 0
+Report_Soil_ETP = 1
+Report_Soil_Net_Rad = 0
+Report_Soil_LE = 0
+Report_Sens_Heat = 0
+Report_Grnd_Heat = 0
+Report_Snow_Heat = 0
+Report_Soil_Temperature = 1
+Report_Skin_Temperature = 1
+
+
+Report_Veget_frac = 1
+Report_Stem_Density = 1
+Report_Leaf_Area_Index = 1
+Report_Stand_Age = 0
+Report_Canopy_Conductance = 0
+Report_GPP = 0
+Report_NPP = 1
+Report_Basal_Area = 1
+Report_Tree_Height = 1
+Report_Root_Mass = 1
+Report_Canopy_Temp = 0
+Report_Canopy_NetR = 0
+Report_Canopy_LE = 0
+Report_Canopy_Sens_Heat = 0
+Report_Canopy_Water_Stor = 0
+Report_Transpiration = 1
+
+#
+#Report timeseries section
+#
+
+Ts_OutletDischarge = 1  
+
+TS_mask = Tsmask.map 
+
+Ts_Long_Rad_Down = 0
+Ts_Short_Rad_Down = 0
+Ts_Precip = 0
+Ts_Rel_Humidity = 0
+Ts_Wind_Speed = 0
+Ts_AvgAir_Temperature = 0
+Ts_MinAir_Temperature = 0
+Ts_MaxAir_Temperature = 0
+Ts_SWE = 1
+Ts_Infilt_Cap = 0
+Ts_Streamflow = 1
+Ts_Soil_Water_Content_Average = 1
+Ts_Soil_Water_Content_L1 = 1
+Ts_Soil_Water_Content_L2 = 1
+Ts_Soil_Water_Content_L3 = 1
+Ts_Soil_Sat_Deficit = 0
+Ts_Ground_Water = 0 #no longer needed
+Ts_Soil_ETP = 1
+Ts_Soil_Net_Rad = 0
+Ts_Soil_LE = 1
+Ts_Sens_Heat = 0
+Ts_Grnd_Heat = 0
+Ts_Snow_Heat = 0
+Ts_Soil_Temperature = 0
+Ts_Skin_Temperature = 0
+Ts_Veget_frac = 0
+Ts_Stem_Density = 0
+Ts_Leaf_Area_Index = 1
+Ts_Stand_Age = 0
+Ts_Canopy_Conductance = 1
+Ts_GPP = 0
+Ts_NPP = 1
+Ts_Basal_Area = 0
+Ts_Tree_Height = 0
+Ts_Root_Mass = 0
+Ts_Canopy_Temp = 0
+Ts_Canopy_NetR = 0
+Ts_Canopy_LE = 0
+Ts_Canopy_Sens_Heat = 0
+Ts_Canopy_Water_Stor = 0
+Ts_Transpiration = 1
+\end{verbatim}

@@ -1,0 +1,103 @@
+/*******************************************************************************
+ * Ech2o, a spatially-distributed, ecohydrologic simulator
+ * Copyright (c) 2016 Marco Maneta <marco.maneta@umontana.edu>
+ *
+ *     This file is part of ech2o, a hydrologic model developed at the 
+ *     University of Montana.
+ *
+ *     Ech2o is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Ech2o is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Ech2o.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Contributors:
+ *    Aaron Smith
+ *******************************************************************************/
+/*
+ * MixingV_Channel.cpp
+ *
+ *  Created on: Oct 29, 2020
+ *      Author: Aaron Smith
+ */
+
+#include "Basin.h"
+
+void Tracking::MixingV_Channel(Basin &bsn, Control &ctrl, double dt,double Qk1,double dtdx,double dx, int r, int c)
+{
+
+  int mixmod = 0; //complete mixing
+
+  double pond_old = bsn.getPondingWater()->matrix[r][c];
+  double chan_store_old = bsn.getChanStoreOld()->matrix[r][c];
+  // Lateral In
+  double LattoChn = bsn.getFluxLattoChn()->matrix[r][c]; 
+  double L1toChn = bsn.getFluxL1toChn()->matrix[r][c];
+  double L2toChn = bsn.getFluxL2toChn()->matrix[r][c];
+  double GWtoChn = bsn.getFluxGWtoChn()->matrix[r][c];
+  double FinSrfChn = L1toChn + L2toChn + GWtoChn + LattoChn + pond_old;
+  // Lateral Out
+  double ChntoLat = Qk1*dtdx/dx;
+  double d2Hin, d18Oin, Agein;
+  double Chnout_d2,Chnout_o18,Chnout_Age;
+
+
+  if(FinSrfChn > RNDOFFERR){ // no need to do mixing if there is no inflow
+    Qout = ChntoLat;
+    if(ctrl.sw_2H){
+      d2Hin= (pond_old * _d2Hsurface->matrix[r][c] + GWtoChn * _d2Hgroundwater->matrix[r][c] + 
+	      _Fd2HLattoChn->matrix[r][c] + L1toChn * _d2Hsoil1_Out->matrix[r][c] + 
+	      L2toChn * _d2Hsoil2_Out->matrix[r][c])/ (FinSrfChn);
+      if(chan_store_old > RNDOFFERR){
+	TracerMixing(bsn,ctrl,chan_store_old,_d2Hchan->matrix[r][c],_d2Hchan->matrix[r][c],
+		     FinSrfChn,d2Hin,Qout,Chnout_d2,1.0,mixmod,r,c);
+      } else { //no storage
+	_d2Hchan->matrix[r][c] = d2Hin;
+      }
+    }
+
+    if(ctrl.sw_18O){
+      d18Oin= (pond_old * _d18Osurface->matrix[r][c] + GWtoChn * _d18Ogroundwater->matrix[r][c] + 
+	      _Fd18OLattoChn->matrix[r][c] + L1toChn * _d18Osoil1_Out->matrix[r][c] + 
+	      L2toChn * _d18Osoil2_Out->matrix[r][c])/ (FinSrfChn);
+      if(chan_store_old > RNDOFFERR){
+	TracerMixing(bsn,ctrl,chan_store_old,_d18Ochan->matrix[r][c],_d18Ochan->matrix[r][c],
+		     FinSrfChn,d18Oin,Qout,Chnout_o18,1.0,mixmod,r,c);
+      } else { //no storage
+	_d18Ochan->matrix[r][c] = d18Oin;
+      }
+    }
+
+    if(ctrl.sw_Age){
+      Agein= (pond_old * _Agesurface->matrix[r][c] + GWtoChn * _Agegroundwater->matrix[r][c] + 
+	      _FAgeLattoChn->matrix[r][c] + L1toChn * _Agesoil1_Out->matrix[r][c] + 
+	      L2toChn * _Agesoil2_Out->matrix[r][c])/ (FinSrfChn);
+      if(chan_store_old > RNDOFFERR){
+	TracerMixing(bsn,ctrl,chan_store_old,_Agechan->matrix[r][c],_Agechan->matrix[r][c],
+		     FinSrfChn,d2Hin,Qout,Chnout_Age,1.0,mixmod,r,c);
+      } else { //no storage
+	_Agechan->matrix[r][c] = Agein;
+      }
+    }
+
+  } else{
+    if(ctrl.sw_2H){
+      _d2Hchan->matrix[r][c] = _d2Hchan->matrix[r][c];
+    }
+    if(ctrl.sw_18O){
+      _d18Ochan->matrix[r][c] = _d18Ochan->matrix[r][c];
+    }
+    if(ctrl.sw_Age){
+      _Agechan->matrix[r][c] = _Agechan->matrix[r][c];
+    }
+  }
+
+}
+
