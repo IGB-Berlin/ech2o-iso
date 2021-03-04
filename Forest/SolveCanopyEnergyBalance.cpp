@@ -173,7 +173,7 @@ UINT4 Forest::SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctr
 
     // EDIT: this formulation makes things much more simple
     maxAv = f1*(poros1 - theta_wp) + f2*(poros2-theta_wp)+f3*(poros3-theta_wp);
-    Sold = (f1*(theta1-theta_wp)+f2*(theta2-theta_wp)+f3*(theta3-theta_wp)) / maxAv ;
+    Sold = (f1*std::max(0.0,(theta1-theta_wp))+f2*std::max(0.0,(theta2-theta_wp))+f3*std::max(0.0,(theta3-theta_wp))) / maxAv ;
 		
     int k = 0;
     
