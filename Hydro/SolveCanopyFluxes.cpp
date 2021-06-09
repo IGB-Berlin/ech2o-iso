@@ -237,9 +237,9 @@ int Basin::SolveCanopyFluxes(Atmosphere &atm, Control &ctrl, Tracking &trck) {
 	  //froot2 = _rootfrac2->matrix[r][c];
 	  froot3 = 1 - froot1 - froot2;
 
-	  theta_available = std::max(0.0,(theta-theta_wp)) * froot1 + 
-	    std::max(0.0,(theta2-theta_wp)) * froot2 + 
-        std::max(0.0,(theta3-theta_wp)) * froot3;
+	  theta_available = std::max(0.0,(theta-theta_r1)) * froot1 + 
+	    std::max(0.0,(theta2-theta_r2)) * froot2 + 
+        std::max(0.0,(theta3-theta_r3)) * froot3;
 
 	  //cout << "theta_a : " << theta_available << ", theta1 : " << theta <<
 	  //  ", theta2 : " << theta2 << ", theta3 : " << theta3 << endl;
@@ -346,9 +346,9 @@ int Basin::SolveCanopyFluxes(Atmosphere &atm, Control &ctrl, Tracking &trck) {
 	  // Transpiration-related update etc.
 	  transp_f += transp * p;
        
-	  pTrp1 = (std::max(0.0,(theta-theta_wp))*froot1) / theta_available;
-	  pTrp2 = (std::max(0.0,(theta2-theta_wp))*froot2) / theta_available;
-      pTrp3 = (std::max(0.0,(theta3-theta_wp))*froot3) / theta_available;
+	  pTrp1 = (std::max(0.0,(theta-theta_r1))*froot1) / theta_available;
+	  pTrp2 = (std::max(0.0,(theta2-theta_r2))*froot2) / theta_available;
+      pTrp3 = (std::max(0.0,(theta3-theta_r3))*froot3) / theta_available;
 	  
       dth1 = transp * p * dt * pTrp1 /d1;
 	  dth2 = transp * p * dt * pTrp2 /d2;
