@@ -172,9 +172,12 @@ UINT4 Forest::SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctr
     //maxAv = (poros1 - theta_r1) * (poros2 - theta_r2) * (poros3 - theta_r3) /(f1*(poros2-theta_r2)*(poros3-theta_r3)+f2*(poros1-theta_r1)*(poros3-theta_r3)+f3*(poros1-theta_r1)*(poros2-theta_r2));
 
     // EDIT: this formulation makes things much more simple
-    maxAv = f1*(poros1 - theta_wp) + f2*(poros2-theta_wp)+f3*(poros3-theta_wp);
-    Sold = (f1*std::max(0.0,(theta1-theta_wp))+f2*std::max(0.0,(theta2-theta_wp))+f3*std::max(0.0,(theta3-theta_wp))) / maxAv ;
-		
+    // maxAv = f1*(poros1 - theta_wp) + f2*(poros2-theta_wp)+f3*(poros3-theta_wp);
+    // Sold = (f1*std::max(0.0,(theta1-theta_wp))+f2*std::max(0.0,(theta2-theta_wp))+f3*std::max(0.0,(theta3-theta_wp))) / maxAv ;
+	
+    maxAv = f1*(poros1 - theta_r1) + f2*(poros2-theta_r2)+f3*(poros3-theta_r3);
+    Sold = (f1*std::max(0.0,(theta1-theta_r1))+f2*std::max(0.0,(theta2-theta_r2))+f3*std::max(0.0,(theta3-theta_r3))) / maxAv ;
+    
     int k = 0;
     
     /***
@@ -191,9 +194,9 @@ UINT4 Forest::SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctr
 
     if(ctrl.sw_ddSoilPar){
       //      cout << "Depth dependent Sperry is running" << endl;
-      Sold1 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta1 - theta_wp) / (poros1 - theta_wp)));
-      Sold2 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta2 - theta_wp) / (poros2 - theta_wp)));
-      Sold3 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta3 - theta_wp) / (poros3 - theta_wp)));
+      Sold1 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta1 - theta_r1) / (poros1 - theta_wp)));
+      Sold2 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta2 - theta_r2) / (poros2 - theta_wp)));
+      Sold3 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta3 - theta_r3) / (poros3 - theta_wp)));
 
       SperryModel(bas, atm, ctrl,d1,Sold1,psiae1,bclambda1,airTp,airRH,rho_a,gamma,ra,poros1,theta_wp,evap_a,fA,fB,fC,
 		  leavesurfRH,leafRH,LET1,LE1,H1,x10,x20,s,r,c);
@@ -230,9 +233,9 @@ UINT4 Forest::SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctr
 
 	lambda = x[2] < 0 ? lat_heat_vap + lat_heat_fus : lat_heat_vap;
 
-	gc = dgcdfgspsi*std::max<REAL8>(0,std::min<REAL8>(1,(lwp_min - x[1]) /
+	//gc = dgcdfgspsi*std::max<REAL8>(0,std::min<REAL8>(1,(lwp_min - x[1]) /
 							  (lwp_min - lwp_max)));
-	//gc = dgcdfgspsi * 1 / (1 + powl(x[1]/lwp_den, lwp_c));
+	gc = dgcdfgspsi * 1 / (1 + powl(x[1]/lwp_den, lwp_c));
 
 	if (gc < 1e-13)
 	  gc = 1e-13;
@@ -278,14 +281,19 @@ UINT4 Forest::SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctr
 	desdTs = es * ((17.3 / (x[2] + 237.3)) - 17.3 * x[2] / (powl(x[2] + 237.3, 2)));
 
 	//dgcdlwp = gc == 1e-13 ? 0 : - dgcdfgspsi * lwp_c * powl(x[1]/lwp_den, lwp_c) / (x[1] * ( powl(x[1]/lwp_den, lwp_c) + 1) * ( powl(x[1]/lwp_den, lwp_c) + 1));
-	if (gc < 1e-12 || x[1] > lwp_min)
-	  dLETdlwp = LET = E = 0;
-	else if (x[1] < lwp_max)
-	  dLETdlwp = -spec_heat_air * rho_a * (ea - es) * (lwp_min - lwp_max)
-	    / (gamma * dgcdfgspsi * (lwp_min - lwp_max) * (lwp_min - lwp_max) * ra_t * ra_t);
-	else
-	  dLETdlwp = -spec_heat_air * rho_a * (ea - es) * (lwp_min - lwp_max)
-	    / (gamma * dgcdfgspsi * (lwp_min - x[1])  * (lwp_min - x[1]) * ra_t * ra_t);
+    if (dgcdfgspsi == 0)
+		dLETdlwp = 0;
+    else
+		dLETdlwp = - rho_a * spec_heat_air * (ea - es) * lwp_c * powl(x[1]/lwp_den, lwp_c) / (dgcdfgspsi * x[1] * gamma *ra_t * ra_t); 
+        
+	//if (gc < 1e-12 || x[1] > lwp_min)
+	//  dLETdlwp = LET = E = 0;
+	//else if (x[1] < lwp_max)
+	//  dLETdlwp = -spec_heat_air * rho_a * (ea - es) * (lwp_min - lwp_max)
+	//    / (gamma * dgcdfgspsi * (lwp_min - lwp_max) * (lwp_min - lwp_max) * ra_t * ra_t);
+	//else
+	//  dLETdlwp = -spec_heat_air * rho_a * (ea - es) * (lwp_min - lwp_max)
+	//    / (gamma * dgcdfgspsi * (lwp_min - x[1])  * (lwp_min - x[1]) * ra_t * ra_t);
 
 	dLETdT = - rho_a * spec_heat_air / (ra_t * gamma) * (desdTs*leafRH + es*dleafRHdT);
 
@@ -350,9 +358,9 @@ UINT4 Forest::SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctr
     // Probably not needed anymore since mass balance is enforced in the system of eqs.
     // solved in this function
     REAL8 Tp = transp_a * ctrl.dt;
-    REAL8 WaterAv = f1* (std::max<REAL8>(0.0,(theta1 - theta_wp))) + 
-                    f2* (std::max<REAL8>(0.0,(theta2 - theta_wp))) + 
-                    f3* (std::max<REAL8>(0.0,(theta3 - theta_wp)));
+    REAL8 WaterAv = f1* (std::max<REAL8>(0.0,(theta1 - theta_r1))) + 
+                    f2* (std::max<REAL8>(0.0,(theta2 - theta_r2))) + 
+                    f3* (std::max<REAL8>(0.0,(theta3 - theta_r3)));
         
     ///TODO: change to wilting point (not residual water content)
     if (WaterAv * rootdepth < Tp) {
