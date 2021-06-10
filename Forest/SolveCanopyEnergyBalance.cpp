@@ -194,9 +194,9 @@ UINT4 Forest::SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctr
 
     if(ctrl.sw_ddSoilPar){
       //      cout << "Depth dependent Sperry is running" << endl;
-      Sold1 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta1 - theta_r1) / (poros1 - theta_wp)));
-      Sold2 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta2 - theta_r2) / (poros2 - theta_wp)));
-      Sold3 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta3 - theta_r3) / (poros3 - theta_wp)));
+      Sold1 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta1 - theta_r1) / (poros1 - theta_r1)));
+      Sold2 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta2 - theta_r2) / (poros2 - theta_r2)));
+      Sold3 = std::min<REAL8>(1.0,std::max<REAL8>(0.0,(theta3 - theta_r3) / (poros3 - theta_r3)));
 
       SperryModel(bas, atm, ctrl,d1,Sold1,psiae1,bclambda1,airTp,airRH,rho_a,gamma,ra,poros1,theta_wp,evap_a,fA,fB,fC,
 		  leavesurfRH,leafRH,LET1,LE1,H1,x10,x20,s,r,c);
