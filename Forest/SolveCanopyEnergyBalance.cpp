@@ -284,7 +284,7 @@ UINT4 Forest::SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctr
     if (dgcdfgspsi == 0)
 		dLETdlwp = 0;
     else
-		dLETdlwp = - rho_a * spec_heat_air * (ea - es) * lwp_c * powl(x[1]/lwp_den, lwp_c) / (dgcdfgspsi * x[1] * gamma *ra_t * ra_t); 
+		dLETdlwp = - rho_a * spec_heat_air * (ea - es) * lwp_max * powl(x[1]/lwp_min, lwp_max) / (dgcdfgspsi * x[1] * gamma *ra_t * ra_t); 
         
 	//if (gc < 1e-12 || x[1] > lwp_min)
 	//  dLETdlwp = LET = E = 0;
