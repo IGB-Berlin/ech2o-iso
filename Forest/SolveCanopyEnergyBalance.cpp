@@ -233,9 +233,9 @@ UINT4 Forest::SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctr
 
 	lambda = x[2] < 0 ? lat_heat_vap + lat_heat_fus : lat_heat_vap;
 
-	//gc = dgcdfgspsi*std::max<REAL8>(0,std::min<REAL8>(1,(lwp_min - x[1]) /
-	//						  (lwp_min - lwp_max)));
-	gc = dgcdfgspsi * 1 / (1 + powl(x[1]/lwp_min, lwp_max));
+	gc = dgcdfgspsi*std::max<REAL8>(0,std::min<REAL8>(1,(lwp_min - x[1]) /
+							  (lwp_min - lwp_max)));
+	//gc = dgcdfgspsi * 1 / (1 + powl(x[1]/lwp_min, lwp_max));
 
 	if (gc < 1e-13)
 	  gc = 1e-13;
