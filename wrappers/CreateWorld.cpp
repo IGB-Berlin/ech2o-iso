@@ -78,6 +78,7 @@ int CreateWorld(char* argv[]){
   ofSummary << "GW\t";
   ofSummary << "ET\t";
   ofSummary << "EvapS\t";
+  ofSummary << "EvapC\t";
   ofSummary << "EvapI\t";
   ofSummary << "EvapT\t";
   ofSummary << "Leakage\t";
