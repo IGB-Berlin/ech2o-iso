@@ -44,7 +44,7 @@ source code.
 
 ## Compilation of source code
 
-Please see the file called INSTALL.rst
+Please see the file called INSTALL.md
 
 ## Data Preprocessing
 
@@ -59,9 +59,8 @@ Please see the file called LICENSE.txt.
 
 ### Bugs
 
-Should you encounter any bug, please file a ticket
-[here](https://bitbucket.org/sylka/ech2o_iso/issues). Known issues can
-be found there, as well as on the [main EcH2O
+Should you encounter any bug, please file a ticket.
+Known issues can be found there, as well as on the [main EcH2O
 page](https://bitbucket.org/maneta/ech2o/issues).
 
 ## How to Cite
