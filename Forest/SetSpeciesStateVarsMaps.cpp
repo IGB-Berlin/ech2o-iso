@@ -35,7 +35,6 @@ void Forest::SetStateVarsMaps(Control &ctrl){
   UINT4 r,c;
   stringstream fn;
 
-
   //for PCRASTER maps
 
   try{
@@ -50,18 +49,18 @@ void Forest::SetStateVarsMaps(Control &ctrl){
 	  fn.str(""); fn << "lai_" << j << ".map";
 	  if(_species[j]._LAI->PCRMap2grid(ctrl.path_BasinFolder + fn.str())==-1)
 	    throw fn.str();
+	  fn.str(""); fn << "hgt_" << j << ".map";
+	  if(_species[j]._Height->PCRMap2grid(ctrl.path_BasinFolder + fn.str())==-1)
+	    throw fn.str();	  
 	}
 
 	*_species[j]._grassLAI_g = *_species[j]._LAI; //needed to initialize lai for grasses
 	
-	   fn.str(""); fn << "age_" << j << ".map";
+	fn.str(""); fn << "age_" << j << ".map";
 	if(_species[j]._AGE->PCRMap2grid(ctrl.path_BasinFolder + fn.str())==-1)
 	  throw fn.str();
 	fn.str(""); fn << "bas_" << j << ".map";
 	if(_species[j]._BasalArea->PCRMap2grid(ctrl.path_BasinFolder + fn.str())==-1)
-	  throw fn.str();
-	fn.str(""); fn << "hgt_" << j << ".map";
-	if(_species[j]._Height->PCRMap2grid(ctrl.path_BasinFolder + fn.str())==-1)
 	  throw fn.str();
 	fn.str(""); fn << "ntr_" << j << ".map";
 	if(_species[j]._StemDensity->PCRMap2grid(ctrl.path_BasinFolder + fn.str())==-1)
@@ -81,7 +80,6 @@ void Forest::SetStateVarsMaps(Control &ctrl){
     cerr << "Initial forest map " << e << " not found" << endl;
     exit(EXIT_FAILURE);
   }
-
 
   //calculate proportion of of bare soil
 

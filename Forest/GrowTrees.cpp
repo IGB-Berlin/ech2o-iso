@@ -55,8 +55,8 @@ int Forest::GrowTrees(UINT4 j, UINT4 r, UINT4 c, REAL8 dt, REAL8 fa, REAL8 ft, R
     ns = (1 - nr) / (1 + pfs);
     nf = 1 - nr - ns;
 
-
   }
+
   // From Arora et al, Glob. Change Biol., 2005
   if (_species[j].vegtype == 2){
                 
@@ -79,12 +79,9 @@ int Forest::GrowTrees(UINT4 j, UINT4 r, UINT4 c, REAL8 dt, REAL8 fa, REAL8 ft, R
   //IncraseFoliageMass
   _species[j]._Del_FoliageMass->matrix[r][c] = _species[j]._NPP->matrix[r][c] * nf;
 
-
   GrowStem(j, r, c); //Increase average height and basal area of species j in r,c cell
   GrowLAI(j, r, c, T,usablewater, dt); //Increase LAI of species j in r,c cell
   GrowRoots(j, r, c, dt); //Increase root density of species j in r,c cell
-
-  cout << _species[j]._LAI->matrix[r][c] << endl;
 
   return EXIT_SUCCESS;
 }

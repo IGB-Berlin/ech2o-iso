@@ -64,10 +64,12 @@ struct Grove {
   REAL8 LeafTurnover; //leaf turnover rate (s-1)
   REAL8 RootTurnover; //root turnover rate (s-1)
   REAL8 MaxCanStorageParamt; //parameter to calcualte maximum canopy storage (after Dickinson 1984 via Liang et al. 1994)
+  REAL8 Throughfall_coeff; //parameter to allow direct throughfall - not tied to vegetation proportions  
   REAL8 albedo; //albedo of dry canopy
   REAL8 emissivity; //emissivity of dry canopy
   REAL8 KBeers; //Extinction coefficient in Beers law of light extinction
   REAL8 Kroot; // Decrease coefficient for exponential root profile (m-1)
+  REAL8 Aroot; // aspect ratio of radial distance of roots from stem (max distance related to Kroot)
   REAL8 beta; //canopy water efficiency (gC m-1)
   // Sperry parameters
   REAL8 sperry_d; // Sperry model scaling parameter (m)
@@ -82,6 +84,7 @@ struct Grove {
   REAL8 LeafTurnoverColdStressShpParam; //Shape  parameter leaf turnover rate due to cold stress (-)
 
   /*state variables*/
+/*state variables*/
   grid *_fraction;
   grid *_StemDensity; //number of trees per square meter (trees m-2)
   grid *_LAI;
@@ -98,6 +101,9 @@ struct Grove {
   grid *_Del_StemMass; //increment of stem mass gCm-2
   grid *_Del_RootMass; //increment of root mass gCm-2
   grid *_Temp_c; //canopy temperature C
+  grid *_RUptakeL1; //proportion of root uptake from layer 1
+  grid *_RUptakeL2; //proportion of root uptake from layer 2
+  grid *_RUptakeL3; //proportion of root uptake from layer 3  
   grid *_NetR_Can;//canopy net radiation Wm-2
   grid *_LatHeat_CanE;//Canopy latent heat E interception Wm-2
   grid *_LatHeat_CanT;//Canopy latent heat transpiration Wm-2
@@ -106,26 +112,37 @@ struct Grove {
   grid *_ET; //Actual evapotranspiration ms-1
   grid *_Einterception; //evaporation if interception component ms-1
   grid *_Transpiration; //transpiration component ms-1
+  grid *_TranspirationFlux; //transpiration flux component m3.s-1
   grid *_Esoil; // soil evaporation component m.s-1
-  grid *_LeafWatPot; // leaf water potential (positive m of head)
+  grid *_SoilWatPot; // soil water potential (negative m of head)
+  grid *_LeafWatPot; // leaf water potential (negative m of head)
+  grid *_SapVelocity; //sap water velocity [m.s-1]
   grid *_rootfrac1; // root fraction in first layer
   grid *_rootfrac2; // root fraction in second layer
 
-  //
   ifstream ifLAI; // LAI files handle
+  ifstream ifhgt; // hgt files handle
   
   // Tracking
   grid *_d2Hcanopy; // d2H of interception water
   grid *_d18Ocanopy; // d18O of interception water
   grid *_Agecanopy; // Age of interception water
 
+  grid *_d2Hthroughfall; // d2H of throughfall water
+  grid *_d18Othroughfall; // d18O of throughfall water
+  grid *_Agethroughfall; // Age of throughfall water
+
   grid *_d2HevapT; // d2H of transpirated water
   grid *_d18OevapT; // d18O of transpirated water
   grid *_AgeevapT; // Age of transpirated water
+  grid *_d2HevapT_Vap; // d2H of transpirated water
+  grid *_d18OevapT_Vap; // d18O of transpirated water  
 
   grid *_d2HevapI; // d2H of evaporated interception
   grid *_d18OevapI; // d18O of evaporated interception
   grid *_AgeevapI; // Age of evaporated interception
+  grid *_d2HevapI_Vap; // d2H of evaporated interception
+  grid *_d18OevapI_Vap; // d18O of evaporated interception  
 
   grid *_d2HevapS; // d2H of evaporated soil water (below each canopy type)
   grid *_d18OevapS; // d18O of evaporated soil water (below each canopy type)
@@ -140,8 +157,6 @@ struct Grove {
   int CreateGridsAge(grid *base);
 
 };
-
-
 
 
 #endif /* GROVE_H_ */

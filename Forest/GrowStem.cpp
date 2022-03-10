@@ -35,7 +35,7 @@ int Forest::GrowStem(UINT4 spec, UINT4 row, UINT4 col){
 	REAL8 delD;
 
 	REAL8 numTrees = _dx * _dx * _species[spec]._fraction->matrix[row][col] *
-	  _species[spec]._StemDensity->matrix[row][col];
+	  			_species[spec]._StemDensity->matrix[row][col];
 	REAL8 H = _species[spec]._Height->matrix[row][col];
 	REAL8 D = 2 * powl(_species[spec]._BasalArea->matrix[row][col] / PI, 0.5);
 	REAL8 G = _species[spec]._Del_StemMass->matrix[row][col] / _species[spec]._StemDensity->matrix[row][col]; //average mass increment per individual tree (grams per tree)
@@ -68,10 +68,8 @@ int Forest::GrowStem(UINT4 spec, UINT4 row, UINT4 col){
 	D += delD;
 
 	_species[spec]._BasalArea->matrix[row][col] = D * D * 0.25 * 3.14159;
-			//powl(delD * 0.5, 2.0) * PI / 1000;
 
 	_species[spec]._Height->matrix[row][col] += Fhd * delD;
-
 
 	return EXIT_SUCCESS;
 }

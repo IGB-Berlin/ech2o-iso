@@ -1,0 +1,516 @@
+#!/usr/bin/env python
+#*******************************************************************************
+# PROGRAMME	: SENSI_MORRIS
+# AUTEUR	: S. KUPPEL
+# CREATION	: 01/2012
+# COMPILATEUR	: PYTHON
+#
+# Analyse de sensibilite d'ORCHIDEE avec la methode de Morris
+#
+# Pour l'instant avec un seul PFT par site
+#
+#
+#*******************************************************************************
+"""
+
+"""
+
+
+# ==============================================================================
+#  MAIN PROGRAM
+# ==============================================================================
+
+import time, os, glob, sys, copy
+import csv
+import ConfigParser
+from optparse import OptionParser
+import socket
+from time import localtime, strftime
+import random
+import numpy as np
+
+# ---------
+#  OPTIONS
+# ---------
+parser = OptionParser()
+
+# --- Definition ---
+# fichier de configuration
+parser.add_option("--file",dest="file",metavar="FILE",
+                  help="Name of the file that defines the simulations to perform")
+
+# chemin de sortie
+parser.add_option("--pathout",dest="pathout",metavar="PATHOUT",                       
+                  help="Name of output directory (current by default)")
+
+# nom executable
+parser.add_option("--exe",dest="exe",metavar="exe",
+                  help="Name of the ECH2O exec file")
+
+# nom executable
+parser.add_option("--cfg",dest="cfg",metavar="cfg",
+                  help="Name of the ECH2O config file")
+
+# nombre d'annees de simulation
+# parser.add_option("--nyears",dest="nyears",metavar="nyears",
+#                  help="Number of years considered")
+
+(options, args) = parser.parse_args()
+
+# --- Gestion ---
+PATH_MAIN = os.getcwd()+'/'
+
+print '*********************************************************************************'
+print 'MORRIS SENSITIVITY TEST : '
+print '- construction of the trajectories'
+print '- forward runs'
+print '- storage of outputs and info for posterior analysis : elementary effects, etc.' 
+print '- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -'
+print
+
+if options.file != None:
+    [file,ext]=os.path.splitext(options.file)
+    if len(glob.glob(file+'.csv')) ==0 : sys.exit('# STOP. The file that define the assimilation characteristics does not exist : \n   ...'+file+'.csv')
+    file = options.file
+    frep = os.path.dirname(file)   
+    if frep == '':  file = os.path.join(PATH_MAIN,file)
+    
+if options.pathout == None:
+    options.pathout = os.getcwd()+'/'+os.path.splitext(options.file)[0]
+
+PATH_OUT  = os.path.abspath(options.pathout)
+PATH_EXEC = os.path.abspath(os.path.join(PATH_OUT,'tmp'))
+
+print 'Output directory ', PATH_OUT
+
+# -----------------------------------------------
+# --- DEFINITION DES CONSTANTES DE SIMULATION ---
+# -----------------------------------------------
+
+### Morris data
+# -------------------
+# Number of levels by parameter
+nniveaux = 7
+# Number of trajectories
+nr = 20
+# Read parameters names, range, etc. in configuration file (.csv)
+with open(file, 'rb') as csvfile:
+    paramread = list(csv.reader(csvfile, delimiter=','))
+    vnames = np.asarray(paramread[1][1:len(paramread[1])])
+    vmin = np.asarray(paramread[2][1:len(paramread[1])],dtype=np.float32)
+    vmax = np.asarray(paramread[3][1:len(paramread[1])],dtype=np.float32)
+    vlog = np.asarray(paramread[4][1:len(paramread[1])],dtype=np.float32)
+    vinv = np.asarray(paramread[5][1:len(paramread[1])],dtype=np.float32)
+exit
+
+# Total number of runs
+npara = len(vnames)
+nruns = npara * nr
+print 'REMINDER --> Total number of runs : ', str(nruns)
+
+### Simulation data
+# ---------------------
+#npts = 1
+#nannees = int(options.nyears)
+#nmois     = nannees * 12
+#njours    = nannees * 365
+#nsemaines = nannees * 53
+
+# Get the PFTs on which depend the site, and the restart files
+import ConfigParser
+cf = ConfigParser.ConfigParser()
+cf.read(file)  
+
+indice_pft = []
+
+for section in cf.sections():  
+    
+    for option in cf.options(section):
+        option = option.upper()
+        if option.find('SECHIBA_VEGMAX__') != -1:
+            buf = option.split('__')
+            pft = int(buf[1])
+            value = float(cf.get(section, option))
+            if value > 0:
+                indice_pft.append(pft)
+
+        if option.find('DRIVER_REST_OUT') != -1:
+            driv_restart = PATH_EXEC+'/'+cf.get(section, option)
+        if option.find('SECHIBA_REST_OUT') != -1:
+            sech_restart = PATH_EXEC+'/'+cf.get(section, option)
+        if option.find('STOMATE_REST_OUT') != -1:
+            stom_restart = PATH_EXEC+'/'+cf.get(section, option)
+
+print 'indice_pft : ',indice_pft
+
+
+# Output(s) used for the elementary effects
+obsname = ['Streamflow']
+class  Data:
+    def __init__(self, names):
+        self.obs = {}
+        self.obsname = names
+        for name in names:
+            self.obs[name] = N.zeros(nniveaux, N.Float32, savespace = 1)
+Res = Data(obsname)
+
+
+# --- Execute command definition ---
+
+cdumpsize = 'ulimit -c 33000'      #'limit coredumpsize 33000'
+stacksize = 'ulimit -s unlimited ' #'limit stacksize unlimited'
+
+if options.exe != None:
+    if len(glob.glob(options.exe))==0:
+        sys.exit('The user provided EXEC file was not found : '+options.exe)
+    exe_ech2o = options.exe
+    print
+    print 'The user provided EXEC file is : '+options.exe
+
+#cmde_ech2o = ' ; '.join([cdumpsize,stacksize,'./'+exe_orchidee])
+cmde_ech2o = ' '.join(['./'+exe_ech2o,cfg_ech2o])
+
+# -- Creation of output directory
+
+if len(glob.glob(PATH_OUT)) == 0: os.system('mkdir '+ PATH_OUT)
+if len(glob.glob(PATH_EXEC)) == 0: os.system('mkdir '+ PATH_EXEC)
+
+print 'PATH_EXEC : ', PATH_EXEC
+print 'PATH_OUT  : ', PATH_OUT
+print 'PATH_MAIN : ', PATH_MAIN
+
+  
+# -- Copy of executable's symbolic link
+if len(glob.glob(os.path.join(PATH_EXEC,exe_orchidee))) != 0:
+    os.system('rm '+os.path.join(PATH_EXEC,exe_orchidee))
+os.symlink(os.path.join(PATH_MAIN, exe_orchidee) , os.path.join(PATH_EXEC,exe_orchidee) )
+
+# -- Change de repertoire
+os.chdir(PATH_EXEC)
+#PATH_EXEC = os.path.abspath('')
+
+
+# ---------------------------------------
+# --- Valeurs a priori des parametres ---
+# ---------------------------------------
+
+file_para_def = os.path.join(PATH_OUT, 'para_ORCHIDEE_defaut.nc')
+
+#- Create a run.def file
+OrchideeTools.gen_rundef(ficConfig = file, \
+                         pathout = PATH_EXEC, \
+                         driv_restart = driv_restart, \
+                         sech_restart = sech_restart, \
+                         stom_restart = stom_restart, \
+                         optim_para_out = file_para_def)
+
+#- Execute ORCHIDEE
+#os.system('pwd')
+os.system('rm -f *rest*')
+print 'Dummy ORCHIDEE run to get the parameter dictionary...'
+os.system(cmde_orchidee + ' > orchidee.log')
+#os.system('rm -f  *rest* orchidee.log')
+
+#- Get the values
+[vars_def, gattr, dims] = IO_tools.readnc(file_para_def)
+
+
+# --- Modify the dimensions   
+for idim in range(len(dims)):
+    
+    dimname = dims[idim]['name']
+    
+    if dimname == 'points_terre': dims[idim]['size'] = npts
+    if dimname == 'indice_pft': dims[idim]['size'] = len(indice_pft)
+    if dimname == 'variation_day': dims[idim]['size'] = njours
+    if dimname == 'variation_week': dims[idim]['size'] = nsemaines
+    if dimname == 'variation_month': dims[idim]['size'] = nmois
+    if dimname == 'variation_year': dims[idim]['size'] = nannees
+
+    
+# -- First, create the output parameter dictionnary
+vars = {}
+
+# -- Second, modify the PFT parameter
+vars['PFT'] = vars_def['PFT']
+npfts = len(indice_pft)
+
+vars['PFT']['dim_size'] = tuple([npts,npfts])
+nvalue = N.zeros((npts,npfts), N.Int32)
+for i in range(npts):  nvalue[i,:] = N.array(indice_pft, N.Int32)
+vars['PFT']['value'] = nvalue
+
+
+#- Values for the time dimension
+tsize = 1
+tvar = 'variation_fix'
+    
+# -- Then, scan each parameter
+mins = N.zeros((npara),N.Float64)
+maxs = N.zeros((npara),N.Float64)
+#orch_paras.names.remove('Var_tl')
+kmm=0
+for pname in orch_paras.names:
+
+    #--- Allocate the default values ---
+    
+    #- Copy the default values
+    vars[pname] = copy.deepcopy(vars_def[pname])
+    buf = copy.deepcopy(vars_def[pname])  # copy of the defaut parameters to be tuned with
+                                          # user defined informations
+    dval = buf['value'][:]                # copy of the values
+    
+
+
+    #- Parameter that only varies with (TIME)
+    if len(buf['dim_name']) == 1:
+        buf['dim_size'] = (tsize)
+        buf['dim_name'] = (tvar,)
+        nvalue = N.zeros((tsize), N.Float64, savespace = 1)            
+        for i in range(tsize): N.put(nvalue.flat,i,buf['value'])
+        buf['value'] = nvalue
+
+        #- Add the keys min, max, sigma, and transfor
+        buf['min'] = N.array(orch_paras.vars[pname]['min'], N.Float64, savespace = 1)
+        buf['max'] = N.array(orch_paras.vars[pname]['max'], N.Float64, savespace = 1)
+        
+    #- Parameter that only varies with (PFT, TIME) OR (POINTS_TERRE, TIME)
+    if len(buf['dim_name']) == 2:
+
+        if buf['dim_name'][0] == 'indice_pft':
+
+            buf['dim_size'] = (npfts,tsize)
+            buf['dim_name'] = ('indice_pft',tvar)
+            value = N.take(buf['value'], (N.array(indice_pft)-1).tolist(), axis = 0)
+            nvalue = N.zeros((npfts,tsize), N.Float64, savespace = 1)
+            for it in range(tsize): nvalue[:,it] = value[:,0]
+            buf['value'] = nvalue
+
+            #- Add the keys min, max, sigma, and transfor
+            min = N.take(orch_paras.vars[pname]['min'], (N.array(indice_pft)-1).tolist(), axis = 0)
+            max = N.take(orch_paras.vars[pname]['max'], (N.array(indice_pft)-1).tolist(), axis = 0)
+            buf['min'] = N.array(min, N.Float64, savespace = 1)
+            buf['max'] = N.array(max, N.Float64, savespace = 1)
+            
+            
+        elif buf['dim_name'][0] == 'points_terre':
+            buf['dim_size'] = (npts,tsize)
+            buf['dim_name'] = ('points_terre',tvar)
+            #value = N.take(buf['value'], (N.array(indice_pft)-1).tolist(), axis = 1)
+            nvalue = N.zeros((npts,tsize), N.Float64, savespace = 1)
+            for i in range(npts*tsize): N.put(nvalue.flat,i,buf['value'])
+            buf['value'] = nvalue
+
+            #- Add the keys min, max, sigma, and transfor
+            buf['min'] = N.array(orch_paras.vars[pname]['min'], N.Float64, savespace = 1)
+            buf['max'] = N.array(orch_paras.vars[pname]['max'], N.Float64, savespace = 1)
+
+        
+    #- Parameter that only varies with (POINTS_TERRE, PFT, TIME)
+    if len(buf['dim_name']) == 3:
+
+        buf['dim_size'] = tuple([npts,npfts,tsize])
+        buf['dim_name'] = ('points_terre','indice_pft',tvar)
+        value = N.take(buf['value'], (N.array(indice_pft)-1).tolist(), axis = 1)
+        nvalue = N.zeros((npts,npfts,tsize), N.Float64, savespace = 1)
+        for ipts in range(npts):
+            for it in range(tsize):
+                nvalue[ipts,:,it] = value[0,:,0]
+        buf['value'] = nvalue
+
+        #- Add the keys min, max, sigma, and transfor
+        min = N.take(orch_paras.vars[pname]['min'], (N.array(indice_pft)-1).tolist(), axis = 0)
+        max = N.take(orch_paras.vars[pname]['max'], (N.array(indice_pft)-1).tolist(), axis = 0)
+        buf['min'] = N.array(min, N.Float64, savespace = 1)
+        buf['max'] = N.array(max, N.Float64, savespace = 1)
+
+
+    vars[pname] = buf
+
+    mins[kmm]=(buf['min'])[0]
+    maxs[kmm]=(buf['max'])[0]
+    kmm=kmm+1
+
+# --- Return the final dictionnary containing the informations on the variables
+class DefVars:
+    def __init__(self, vars, dims):
+        self.vars = vars
+        self.gattr = {'name': 'date','value':strftime("%a, %d %b %Y %H:%M:%S +0000", localtime())}
+        self.dims = dims
+        
+Paras = DefVars(vars, dims)
+
+
+# -----------------------------------------------------
+# --- Creation of the Morris trajectories ---
+# -----------------------------------------------------
+
+# Value possible for each parameter
+step = N.zeros((npara),N.Float64,savespace=1)
+i=0
+for pname in varnames:
+    step[i] = (maxs[i]-mins[i])/(nniveaux-1)
+    orch_paras.vars[pname]['values'] = N.arange(mins[i],maxs[i]+0.0000001, step[i], N.Float32)
+    i=i+1
+    
+# Construct B* matrix, for each repetition
+Bstar = N.zeros((npara,npara+1,nr),N.Float64,savespace=1)
+Xstar = N.zeros((npara),N.Float64,savespace=1)
+ind_hist = N.zeros((npara,nr),savespace=1) #history of the index of trajectory construction
+
+for ir in range(nr):
+
+    # Generate 'base' vector X*
+    ind_tmp = N.zeros((npara),savespace=1)
+    for i in range(npara):
+        ind_tmp[i] = random.randint(0,nniveaux-1)
+        Xstar[i]=mins[i]+ind_tmp[i]*step[i]
+        if Xstar[i] < mins[i]:
+            #print varnames[i],Xstar[i], mins[i],ind_tmp[i],step[i],mins[i]+ind_tmp[i]*step[i]
+            sys.exit()
+
+    # Generate trajectory
+    # first: the first point comes from an increase by some steps of a random number of components
+    Bstar[:,0,ir]=Xstar
+    #if ir==0:
+    # ind1 = range(npara)
+    # random.shuffle(ind1)
+
+    # #maxind = random.randint(1,npara)
+    # gap_tmp = N.zeros((npara),savespace=1)
+    # for i in range(maxind):
+    #     seq = range(ind_tmp[ind1[i]],nniveaux)
+    #     gap_tmp[ind1[i]] = random.choice(seq)
+    #     Bstar[ind1[i],0,ir] = mins[ind1[i]]+gap_tmp[ind1[i]]*step[ind1[i]]
+    #     if Bstar[ind1[i],0,ir] < Xstar[ind1[i]]: 
+    #         #print mins[ind1[i]], maxs[ind1[i]],step[ind1[i]],ind1_tmp[ind1[i]]
+    #         #print Bstar[ind1[i],0,ir], Xstar[ind1[i]]
+    #         sys.exit('Error in the definition of X(1) !!')
+    #print (Bstar[:,0,ir]-Xstar)/step
+    # then: all the next are changed by only one component with + or - one step
+    #if ir==0:
+    ind2 = range(npara)
+    random.shuffle(ind2)
+    ind_hist[:,ir]=ind2
+    for i in range(npara):
+        #print varnames[ind2[i]]
+        Bstar[:,i+1,ir] = Bstar[:,i,ir] #copy previous location
+        eps = random.choice([-1,1])
+        tmp = Bstar[ind2[i],i,ir] + step[ind2[i]]*eps #add (or substract) one step for a random component (not used)
+
+        if ind_tmp[ind2[i]] == 0: # case where we already are on the lower boundary : add
+            tmp = Bstar[ind2[i],i,ir] + step[ind2[i]]
+        if ind_tmp[ind2[i]] == nniveaux-1 : # case where we already are on the upper boundary : sbtrkt
+            tmp = Bstar[ind2[i],i,ir] - step[ind2[i]]
+
+        Bstar[ind2[i],i+1,ir] = tmp
+        if tmp > maxs[ind2[i]]+0.00000001 or tmp < mins[ind2[i]]-0.0000001:
+            print 'Error in the incrementation of the parameter '+varnames[ind2[i]]
+            #print Xstar[ind2[i]],Bstar[ind2[i],i,ir],Bstar[ind2[i],i+1,ir],tmp
+            #print mins[ind2[i]], maxs[ind2[i]],step[ind2[i]],ind2_tmp[ind2[i]],gap_tmp[ind2[i]]
+            sys.exit()
+
+    #print Bstar[ind2[i],i,ir], Bstar[ind2[i],i+1,ir]
+    #print ind2
+    #print ind_hist[:,ir]
+        
+
+#-Ecriture du fichier de valeurs
+Vars = {}
+for ip in range(npara):
+    Vars[varnames[ip]]= {'dim_name': ('nsteps','nrepet'), \
+                      'dim_size': (npara+1,nr),\
+                      'attr_name' : ['long_name','min','max'],\
+                      'attr_value' : ['Values taken by '+pname+' in each trajectory (repetition)',\
+                                       mins[ip],maxs[ip]],\
+                      'value' : Bstar[ip,:,:]}
+    
+Vars['Bstar'] = {'dim_name': ('npara','nsteps','nrepet',), \
+               'dim_size': (npara,npara+1,nr),\
+               'attr_name' : ['long_name'],\
+               'attr_value' : ['Matrix of Morris parameter trajectories'],\
+               'value' : Bstar}
+Vars['ind_hist'] = {'dim_name': ('npara','nrepet'), \
+               'dim_size': (npara,nr),\
+               'attr_name' : ['long_name'],\
+               'attr_value' : ['History of the component changed at each step of the trajectories'],\
+               'value' : ind_hist}
+          
+Varsdims = []
+Varsdims.append({'name':'npara', 'size':npara})
+Varsdims.append({'name':'nsteps', 'size':npara+1})
+Varsdims.append({'name':'nrepet', 'size':nr})
+nvarnames = ['Bstar','ind_hist']
+nvarnames.extend(varnames)
+IO_tools.writenc(os.path.join(PATH_OUT,'trajectories.nc'), vars = Vars, dims = Varsdims, var_order = nvarnames) 
+
+
+# ----------------------------------------------------------------
+# --- Simulations en faisant varier les valeurs des parametres ---
+# ----------------------------------------------------------------
+
+print 'path exec : ', PATH_EXEC
+
+# Each trajectory
+for ir in range(nr):
+    trajnb = '%02i' % int(ir+1)
+    print 
+    print '======================================'
+    print '## Trajectory '+trajnb+' out of '+str(nr)
+    print '----------------------------------'
+
+    # There are npara+1 runs for each trajectory
+    for irun in range(npara+1):
+
+        runnb = '%02i' % int(irun+1)
+        print 'Run '+str(irun+1)+' out of '+str(npara+1)
+        if irun == 0:
+            # Assign the first vector parameters values
+            for ip in range(npara):
+                Paras.vars[varnames[ip]]['value'] = Bstar[ip,irun,ir]
+                print '     '+varnames[ip]+' : '+str(Bstar[ip,irun,ir])
+        if irun >= 1:
+            # Change only the relevant parameter
+            ind_new = ind_hist[irun-1,ir]
+            Paras.vars[varnames[ind_new]]['value'] = Bstar[ind_new,irun,ir]
+            print '     Modif of '+varnames[ind_new]+' : '+str(Bstar[ind_new,irun-1,ir])+' --> '+str(Bstar[ind_new,irun,ir])
+            if Bstar[ind_new,irun,ir] == Bstar[ind_new,irun-1,ir]: 
+                sys.exit('ERROR : the wrong parameter was assumed as changed !!!')
+
+        
+        #-- Create the run.def file --
+        file_para_in = os.path.join(PATH_EXEC , 'para_in_traj'+trajnb+'_run'+runnb+'.nc')
+        file_flux_out = os.path.join(PATH_OUT , 'flux_traj'+trajnb+'_run'+runnb+'.nc')
+        driv_restart = os.path.join(PATH_EXEC , 'driv_restart.nc')
+        sech_restart = os.path.join(PATH_EXEC , 'sech_restart.nc')
+        stom_restart = os.path.join(PATH_EXEC , 'stom_restart.nc')
+        
+        OrchideeTools.gen_rundef(ficConfig = file, \
+                                 pathout = PATH_EXEC, \
+                                 optim = 'y',\
+                                 optim_flux_out = file_flux_out, \
+                                 optim_para_in = file_para_in,\
+                                 
+                                 driv_restart = driv_restart,\
+                                 sech_restart = sech_restart,\
+                                 stom_restart = stom_restart,\
+                                 
+                                 sech_out = os.path.join(PATH_EXEC , 'sech_out.nc'),\
+                                 stom_out = os.path.join(PATH_EXEC , 'stom_out.nc')
+                                 )
+
+
+        #-- Create the para_in.nc file --
+        OrchideeTools.write_paras(file_para_in, Paras, varnames)
+
+        #-- Execute ORCHIDEE --
+        os.system('rm -f ' + driv_restart +' '+ sech_restart +' '+stom_restart)
+        print 'Orchidee simulation in progress...'
+        #os.system(cmde_orchidee + ' > orchidee.log')
+        runall = '%03i' % int(nr*ir+irun+1)
+        os.system('time ' + cmde_orchidee + ' > orchidee'+runall+'.log')
+        os.system('rm -f ' + os.path.join(PATH_EXEC, 'driv_restart.nc'))
+
+        
+
+# END PROGRAM MAIN

@@ -62,29 +62,19 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
 
   int mixmod = ctrl.toggle_mix;
 
-  double theta_MW1 = 0;
-  double theta_MW2 = 0;
-  //double theta_r = 0;
-  //double porosity = 0;
-  double SrftoTB1 = 0;
-  double SrftoMW1 = 0;
-  double MW1toTB2 = 0;
-  double MW1toMW2 = 0;
-
+  double theta_MW1,theta_MW2,SrftoTB1,SrftoMW1,MW1toTB2,MW1toMW2;
+  theta_MW1 = theta_MW2 = SrftoTB1 = SrftoMW1 = MW1toTB2 = MW1toMW2 = 0;
+  
   // save the outflow tracer values of the fluxes
-  double SrftoL1_d2  = -1000;
-  double SrftoL1_o18 = -1000;
-  double SrftoL1_age = -1000;
-  double L1toL2_d2   = -1000;
-  double L1toL2_o18  = -1000;
-  double L1toL2_age  = -1000;
-  double L2toL3_d2   = -1000;
-  double L2toL3_o18  = -1000;
-  double L2toL3_age  = -1000;
-  double L3out_d2    = -1000;
-  double L3out_o18   = -1000;
-  double L3out_age   = -1000;
- 
+  double SrftoL1_d2,SrftoL1_o18,SrftoL1_age;
+  double L1toL2_d2,L1toL2_o18,L1toL2_age;
+  double L2toL3_d2,L2toL3_o18,L2toL3_age;
+  double L3out_d2,L3out_o18,L3out_age;
+  SrftoL1_d2 = SrftoL1_o18 = SrftoL1_age  = -1000;
+  L1toL2_d2 = L1toL2_o18 = L1toL2_age = -1000;
+  L2toL3_d2 = L2toL3_o18 = L2toL3_age = -1000;
+  L3out_d2  = L3out_o18 = L3out_age = -1000;
+  
   if(ctrl.sw_2H and step==0){
     _d2HGWtoChn->reset();
     _d2HSrftoChn->reset();
@@ -102,10 +92,8 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
   }
     
   if(ctrl.sw_TPD){
-    //theta_r = bsn.getSoilMoistR()->matrix[r][c];
     theta_MW1 = bsn.getMoistureMW1()->matrix[r][c];
     theta_MW2 = bsn.getMoistureMW2()->matrix[r][c];
-    //porosity = bsn.getPorosity()->matrix[r][c];
     // Routing to tightly-bound domain: fraction from relative volume of "inactive"-pore domain, 
     // limited by the "available space" in tightly-bound domain max(0,d1*(theta_MW-theta1_old))
     SrftoTB1 = std::min<double>(SrftoL1,//*(theta_MW-theta_r)/(porosity-theta_r),
@@ -119,20 +107,18 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
     // L3: Percolation only from mobile water water in L2 (MW2toL3 = L2toL3). 
   }
 
-  // Surface (if reinfiltrating) ----------------------------------------------------
+  //******************************************************************************************
+  //--- Surface mixing if reinfiltrating -----------------------------------------------------
+  //******************************************************************************************
   if(step == 1){
-
-    // Fluxes in
-    SnowtoSrf = bsn.getFluxSnowtoSrf()->matrix[r][c];
-    LattoSrf = bsn.getFluxLattoSrf()->matrix[r][c]; 
-    FinSrf = SnowtoSrf + LattoSrf;
-    
+    SnowtoSrf = bsn.getFluxSnowtoSrf()->matrix[r][c]; 	//Snow melt to ponded water
+    LattoSrf = bsn.getFluxLattoSrf()->matrix[r][c]; 	//Lateral inflow to ponded water
+    FinSrf = SnowtoSrf + LattoSrf; 			//Total inflow
     if(FinSrf > RNDOFFERR) {
-      
       pond_old = bsn.getPondingWater()->matrix[r][c] - FinSrf;
 
       if(ctrl.sw_2H){    
-	d2Hin = (_Fd2HLattoSrf->matrix[r][c] + SnowtoSrf*_d2Hsnowmelt->matrix[r][c])/ FinSrf ; // input to ponded water mixing
+	d2Hin = (_Fd2HLattoSrf->matrix[r][c] + SnowtoSrf*_d2Hsnowmelt->matrix[r][c])/ FinSrf ; 
 	if(pond_old > RNDOFFERR){
 	  TracerMixing(bsn,ctrl,pond_old,_d2Hsurface->matrix[r][c],_d2Hsurface->matrix[r][c],
 		       FinSrf,d2Hin,SrftoL1,SrftoL1_d2,1.0,ctrl.toggle_mix,r,c);
@@ -143,7 +129,6 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
       } // end deuterium
 
       if(ctrl.sw_18O){
-	// Update surface
 	d18Oin = (_Fd18OLattoSrf->matrix[r][c] + SnowtoSrf*_d18Osnowmelt->matrix[r][c])/ FinSrf ;
 	if(pond_old > RNDOFFERR){
 	  TracerMixing(bsn,ctrl,pond_old,_d18Osurface->matrix[r][c],_d18Osurface->matrix[r][c],
@@ -167,24 +152,19 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
     } // end the surface water      
   } // end if step == 1
 
-
-
-
-  // === Only if initial infitlration or reinfilt + non-channel
-  if(step == 0 or (step==1 and ctrl.sw_reinfilt and 
-		   !(ctrl.sw_channel and bsn.getChannelWidth()->matrix[r][c] > 0))){
-
-    // Layer 1 ------------------------------------------------------------------------
-  
-    // If two-pore domain activated, and different groundwater origin (MW2 instead of soil2)
-    if(ctrl.sw_TPD and SrftoL1>RNDOFFERR){
-      //TODO update the saturation for each TB and MW
-      if(ctrl.sw_2H){
+  //******************************************************************************************
+  //--- Mixing if initial infilt OR  (reinfilt & non-channel) --------------------------------
+  //******************************************************************************************
+  if(step == 0 or (step==1 and ctrl.sw_reinfilt)){
+    //---------------------------------------------------------------------------------------- 
+    //+++ Layer 1 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    //---------------------------------------------------------------------------------------- 
+    // &&& TWO-PORE &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+    if(ctrl.sw_TPD and SrftoL1>RNDOFFERR){ 		//If two-pore domain activated
+      if(ctrl.sw_2H){				      	//TODO update the saturation for each TB and MW
 	SrftoL1_d2 = SrftoL1_d2 == -1000 ? _d2Hsurface->matrix[r][c] : SrftoL1_d2;
-
 	_d2H_TB1->matrix[r][c] = InputMix(std::min<double>(theta1_old,theta_MW1)*d1, _d2H_TB1->matrix[r][c],
 					  SrftoTB1, SrftoL1_d2);
-     
 	if(std::max<double>(0,theta1_old-theta_MW1) > RNDOFFERR){
 	  TracerMixing(bsn,ctrl,std::max<double>(0,theta1_old-theta_MW1)*d1,_d2H_MW1->matrix[r][c],
 		       _d2H_MW1->matrix[r][c],SrftoMW1,SrftoL1_d2,L1toL2,L1toL2_d2,S1,mixmod,r,c);
@@ -195,10 +175,8 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
     
       if(ctrl.sw_18O){
 	SrftoL1_o18 = SrftoL1_o18 == -1000 ? _d18Osurface->matrix[r][c] : SrftoL1_o18;
-
 	_d18O_TB1->matrix[r][c] = InputMix(std::min<double>(theta1_old,theta_MW1)*d1, _d18O_TB1->matrix[r][c],
 					   SrftoTB1, SrftoL1_o18);
-      
 	if(std::max<double>(0,theta1_old-theta_MW1) > RNDOFFERR){
 	  TracerMixing(bsn,ctrl,std::max<double>(0,theta1_old-theta_MW1)*d1,_d18O_MW1->matrix[r][c],
 		       _d18O_MW1->matrix[r][c],SrftoMW1,SrftoL1_o18,L1toL2,L1toL2_o18,S1,mixmod,r,c);
@@ -209,10 +187,8 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
     
       if(ctrl.sw_Age){
 	SrftoL1_age = SrftoL1_age == -1000 ? _Agesurface->matrix[r][c] : SrftoL1_age;
-
 	_Age_TB1->matrix[r][c] = InputMix(std::min<double>(theta1_old,theta_MW1)*d1, _Age_TB1->matrix[r][c], 
 					  SrftoTB1, SrftoL1_age);
-
 	if(std::max<double>(0,theta1_old-theta_MW1) > RNDOFFERR){
 	  TracerMixing(bsn,ctrl,std::max<double>(0,theta1_old-theta_MW1)*d1,_Age_MW1->matrix[r][c],
 		       _Age_MW1->matrix[r][c],SrftoMW1,SrftoL1_age,L1toL2,L1toL2_age,S1,mixmod,r,c);
@@ -221,6 +197,7 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
 	}
       }// end water age
 
+    // &&& AVERAGED &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     } else if (SrftoL1>RNDOFFERR){ // Soil-averaged
       if(ctrl.sw_2H){
 	SrftoL1_d2 = SrftoL1_d2 == -1000 ? _d2Hsurface->matrix[r][c] : SrftoL1_d2;
@@ -241,15 +218,14 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
       } // end water age
     }
   
-    // Layer 2 ------------------------------------------------------------------------
-  
-    // If two-pore domain activated: only MW1 percolates
+    //---------------------------------------------------------------------------------------- 
+    //+++ Layer 2 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    //---------------------------------------------------------------------------------------- 
+    // &&& TWO-PORE &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  
     if(ctrl.sw_TPD and L1toL2>RNDOFFERR){
-      //TODO update the saturation for each TB and MW
-      if(ctrl.sw_2H){
+      if(ctrl.sw_2H){	      //TODO update the saturation for each TB and MW
 	_d2H_TB2->matrix[r][c] = InputMix(std::min<double>(theta2_old,theta_MW2)*d2,_d2H_TB2->matrix[r][c],
 					  MW1toTB2, L1toL2_d2);
-
 	if(std::max<double>(0,theta2_old-theta_MW2) > RNDOFFERR){
 	  TracerMixing(bsn,ctrl,std::max<double>(0,theta2_old-theta_MW2)*d2,_d2H_MW2->matrix[r][c],
 		       _d2H_MW2->matrix[r][c],MW1toMW2,L1toL2_d2,L2toL3,L2toL3_d2,S2,mixmod,r,c);
@@ -261,19 +237,17 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
       if(ctrl.sw_18O){
 	_d18O_TB2->matrix[r][c] = InputMix(std::min<double>(theta2_old,theta_MW2)*d2,_d18O_TB2->matrix[r][c], 
 					   MW1toTB2, L1toL2_o18);
-
 	if(std::max<double>(0,theta2_old-theta_MW2) > RNDOFFERR){
 	  TracerMixing(bsn,ctrl,std::max<double>(0,theta2_old-theta_MW2)*d2,_d18O_MW2->matrix[r][c],
 		       _d18O_MW2->matrix[r][c],MW1toMW2,L1toL2_o18,L2toL3,L2toL3_o18,S2,mixmod,r,c);
 	} else {
 	  _d18O_MW2->matrix[r][c] = _d18O_MW1->matrix[r][c];
 	}
-      
       } // end oxygen-18
+
       if(ctrl.sw_Age){
 	_Age_TB2->matrix[r][c] = InputMix(std::min<double>(theta2_old,theta_MW2)*d2,_Age_TB2->matrix[r][c], 
 					  MW1toTB2, L1toL2_age);
-
 	if(std::max<double>(0,theta2_old-theta_MW2) > RNDOFFERR){
 	  TracerMixing(bsn,ctrl,std::max<double>(0,theta2_old-theta_MW2)*d2,_Age_MW2->matrix[r][c],
 		       _Age_MW2->matrix[r][c],MW1toMW2,L1toL2_age,L2toL3,L2toL3_age,S2,mixmod,r,c);
@@ -282,6 +256,7 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
 	}
       }//end water age
 
+    // &&& AVERAGED &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     } else if (L1toL2 > RNDOFFERR){ // Soil-averaged
       if(ctrl.sw_2H){
 	L1toL2_d2 = L1toL2_d2 == -1000 ? _d2Hsoil1->matrix[r][c] : L1toL2_d2;
@@ -300,14 +275,15 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
       }
     }
   
-    // Layer 3 ------------------------------------------------------------------------
-    
+    //---------------------------------------------------------------------------------------- 
+    //+++ Layer 3 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    //---------------------------------------------------------------------------------------- 
+    // &&& TWO-PORE &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  
     // If two-pore domain activated: only MW2 percolates
     if(ctrl.sw_TPD and L2toL3>RNDOFFERR){
       if(ctrl.sw_2H){
     	TracerMixing(bsn,ctrl,theta3_old*d3,_d2Hsoil3->matrix[r][c],_d2Hsoil3->matrix[r][c],
 		     L2toL3,L2toL3_d2,leak,L3out_d2,S3,ctrl.toggle_mix,r,c);
-
 	_d2HRecharge->matrix[r][c] = step == 0 ? L2toL3_d2 :
 	  InputMix(std::max<double>(0.0,bsn.getFluxRecharge()->matrix[r][c] - L2toL3), 
 		   _d2HRecharge->matrix[r][c], L2toL3, L2toL3_d2);
@@ -330,14 +306,13 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
 	  InputMix(std::max<double>(0.0,bsn.getFluxRecharge()->matrix[r][c] - L2toL3), 
 		   _AgeRecharge->matrix[r][c], L2toL3, L2toL3_age);
       }
-      
+
+    // &&& AVERAGED &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&      
     } else if (L2toL3>RNDOFFERR){// Soil-averaged
-      
       if(ctrl.sw_2H){
 	L2toL3_d2 = L2toL3_d2 == -1000 ? _d2Hsoil2->matrix[r][c] : L2toL3_d2;
     	TracerMixing(bsn,ctrl,theta3_old*d3,_d2Hsoil3->matrix[r][c],_d2Hsoil3->matrix[r][c],
 		     L2toL3,L2toL3_d2,leak,L3out_d2,S3,ctrl.toggle_mix,r,c);
-
 	_d2HRecharge->matrix[r][c] = step == 0 ? L2toL3_d2 :
 	       InputMix(std::max<double>(0.0,bsn.getFluxRecharge()->matrix[r][c] - L2toL3), 
 		   _d2HRecharge->matrix[r][c], L2toL3, L2toL3_d2);
@@ -347,7 +322,6 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
 	L2toL3_o18 = L2toL3_o18 == -1000 ? _d18Osoil2->matrix[r][c] : L2toL3_o18;
     	TracerMixing(bsn,ctrl,theta3_old*d3,_d18Osoil3->matrix[r][c],_d18Osoil3->matrix[r][c],
 		     L2toL3,L2toL3_o18,leak,L3out_o18,S3,ctrl.toggle_mix,r,c);
-
 	_d18ORecharge->matrix[r][c] = step == 0 ? L2toL3_o18 :
 	       InputMix(std::max<double>(0.0,bsn.getFluxRecharge()->matrix[r][c] - L2toL3), 
 		   _d18ORecharge->matrix[r][c], L2toL3, L2toL3_o18);
@@ -356,46 +330,35 @@ void Tracking::MixingV_down(Basin &bsn, Control &ctrl,
 	L2toL3_age = L2toL3_age == -1000 ? _Agesoil2->matrix[r][c] : L2toL3_age;
     	TracerMixing(bsn,ctrl,theta3_old*d3,_Agesoil3->matrix[r][c],_Agesoil3->matrix[r][c],
 		     L2toL3,L2toL3_age,leak,L3out_age,S3,ctrl.toggle_mix,r,c);
-
 	_AgeRecharge->matrix[r][c] = step == 0 ? L2toL3_age :
 	       InputMix(std::max<double>(0.0,bsn.getFluxRecharge()->matrix[r][c] - L2toL3), 
 		   _AgeRecharge->matrix[r][c], L2toL3, L2toL3_age);
       }
     }
 
-  // Groundwater ------------------------------------------------------------------------
-  
+    //---------------------------------------------------------------------------------------- 
+    //+++ Groundwater ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    //---------------------------------------------------------------------------------------- 
     if(ctrl.sw_2H)
       _d2Hgroundwater->matrix[r][c] = L3out_d2 == -1000 ? _d2Hsoil3->matrix[r][c] : L3out_d2;
-	//_d2Hgroundwater->matrix[r][c] = _d2Hsoil3->matrix[r][c];
       
     if(ctrl.sw_18O)
       _d18Ogroundwater->matrix[r][c] = L3out_o18 == -1000 ? _d18Osoil3->matrix[r][c] : L3out_o18;
-        //_d18Ogroundwater->matrix[r][c] = _d18Osoil3->matrix[r][c];
 
     if(ctrl.sw_Age)
       _Agegroundwater->matrix[r][c] = L3out_age == -1000 ? _Agesoil3->matrix[r][c] : L3out_age;
-        //_Agegroundwater->matrix[r][c] = _Agesoil3->matrix[r][c];
+  } //end mixing
 
-  }
-
-  // -- Leakage : only if first infiltration (in SolveSurfaceFluxes)
+  //------------------------------------------------------------------------------------------ 
+  //+++ Leakage : only if first infiltration (in SolveSurfaceFluxes) +++++++++++++++++++++++++
+  //+++ Backup pre-routing GW d2H for use in MixingRouting2.cpp ++++++++++++++++++++++++++++++
+  //------------------------------------------------------------------------------------------ 
   if(step == 0){
-    //    cout << "L3out_d2: " << L3out_d2 << " |d2hGW: " << _d2Hgroundwater->matrix[r][c] << endl;
-    // Backup pre-routing GW d2H for use in MixingRouting2.cpp
-    if(ctrl.sw_2H){
-      //_d2Hleakage->matrix[r][c] = _d2Hgroundwater->matrix[r][c];
+    if(ctrl.sw_2H)
       _d2Hleakage->matrix[r][c] = L3out_d2 == -1000 ? _d2Hgroundwater->matrix[r][c] : L3out_d2;
-    }
-    if(ctrl.sw_18O){
-      //_d18Oleakage->matrix[r][c] = _d18Ogroundwater->matrix[r][c]; 
+    if(ctrl.sw_18O)
       _d18Oleakage->matrix[r][c] = L3out_o18 == -1000 ? _d18Ogroundwater->matrix[r][c] : L3out_o18;
-    }
-    if(ctrl.sw_Age){
-      //_Ageleakage->matrix[r][c] = _Agegroundwater->matrix[r][c]; 
+    if(ctrl.sw_Age)
       _Ageleakage->matrix[r][c] = L3out_age == -1000 ? _Agegroundwater->matrix[r][c] : L3out_age;
-    }
-  }  
+  }  //end leakage
 }
-
-

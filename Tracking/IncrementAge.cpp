@@ -36,12 +36,6 @@ int Tracking::IncrementAge(Basin &bsn, Control &ctrl){
   REAL8 dt = ctrl.dt / 86400 ; // units: days
   UINT4 nsp = bsn.getNumSpecies();
 
-  /*REAL8 output1, output2;
-    output1 = _Agesoil1->mini();
-    output2 = _Agesoil1->maxi();
-    cout << "[" << output1 << "," << output2 << "] -->";
-  */
-
 #pragma omp parallel default(shared) private(r,c, s)
   {
 
@@ -57,11 +51,14 @@ int Tracking::IncrementAge(Basin &bsn, Control &ctrl){
 	bsn.setAgecanopy(s, r, c, bsn.getAgecanopy(s)->matrix[r][c] + dt);
       
       _Agesnowpack->matrix[r][c] = bsn.getSnowWaterEquiv()->matrix[r][c] > RNDOFFERR ?
-	_Agesnowpack->matrix[r][c] + dt : 0.0 ; // Snowpack
+	                                 _Agesnowpack->matrix[r][c] + dt : 0.0 ; 	// Snowpack
       _Agesurface->matrix[r][c] = bsn.getPondingWater()->matrix[r][c] > RNDOFFERR ?
-	_Agesurface->matrix[r][c] + dt : 0.0 ;// Ponding
+	                                 _Agesurface->matrix[r][c] + dt : 0.0 ; 	// Ponding
       _Agegroundwater->matrix[r][c] = bsn.getGrndWater()->matrix[r][c] > RNDOFFERR ?
-	_Agegroundwater->matrix[r][c] + dt : 0.0; // Groundwater
+	                                 _Agegroundwater->matrix[r][c] + dt : 0.0; 	// Groundwater
+      if(ctrl.sw_deepGW)
+	_AgedeepGW->matrix[r][c] = bsn.getDeepGW()->matrix[r][c] > RNDOFFERR ? 
+					_AgedeepGW->matrix[r][c] + dt : 0.0; 		//Extra GW
 
       if(ctrl.sw_TPD){
 	_Age_TB1->matrix[r][c] += dt; // Mobile water layer 1
@@ -89,14 +86,10 @@ int Tracking::IncrementAge(Basin &bsn, Control &ctrl){
     for (UINT4 i = 0; i < _AgeOvlndOutput.cells.size(); i++){ //b->getSortedGrid().cells.size();; i++){
       _AgeOvlndOutput.cells[i].val += dt ;
       _AgeGwtrOutput.cells[i].val += dt ;
+      if(ctrl.sw_deepGW)
+	_AgeDeepGwtrOutput.cells[i].val += dt;
       }
-    
   }
-  /*
-    output1 = _Agesoil1->mini();
-    output2 = _Agesoil1->maxi();
-    cout << "[" << output1 << "," << output2 << "]" << endl;
-  */
   
   return EXIT_SUCCESS;
 }

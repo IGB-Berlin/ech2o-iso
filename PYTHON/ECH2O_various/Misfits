@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#$ -N Misfits
+#$ -o /users/s01ks6/RUNS/ECH2O/BB/Calibration/jobs_output/
+#$ -cwd
+
+# $ -pe mpislots 48
+### $ -pe mpinodes-verbose 3
+# $ -pe smp-verbose 16
+#$ -t 1-50
+
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/alces/opt/ruby/1.9.3-p194/lib:/users/s01ks6/LIB/ECH2O/ech2o_iso/lib/:/opt/gridware/uoa/apps/anaconda/4.0.0/lib/
+#export PATH=$PATH:/usr/lib64/qt-3.3/bin:/opt/alces/pkg/services/gridscheduler/2011.11p1_155/bin/linux-x64:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/users/s01ks6/bin:/opt/gridware/uoa/apps/pcraster/4.1.0/bin:/opt/gridware/pkg/apps/intelcsxe/2013.0.028/bin/impi/4.1.0.024/bin64/
+#export PYTHONPATH=$PYTHONPATH:/opt/gridware/uoa/apps/pcraster/4.1.0/python 
+
+#echo
+#echo 'Library path: ' $LD_LIBRARY_PATH
+#echo 'Python path: ' $PYTHONPATH
+#echo 'PATH : ' $PATH
+#
+module load apps/anaconda/4.0.0
+
+#python -i Misfits_CFMSE_new.py
+#python -i OJ_KGEdecomp.py
+#python -i OF_mix.py --ext=LHS1 --switch=0 
+#python -i OF_mixnew.py --ext=LHS2 --switch=0 
+#python -i OF_mix2-scratch.py --ext=MC19 --docopy=1 --byjob=1 --jobs=60
+#python -i OF_mix2-scratch.py --ext=MC19 --docopy=1 --byjob=1 --jobs=$SGE_TASK_ID
+#python -i OF_mix.py --ext=MC12 --switch=1 --nbest=30 --metric=KGE2012+RMSE --swpar=1 --swsim=1 
+#python -i OF_mix.py --ext=MC12 --switch=1 --nbest=30 --metric=MAE+RMSE --swpar=1 --swsim=1 
+#python -i OF_mix.py --ext=MC12 --switch=1 --nbest=30 --metric=KGE2012+RMSE+MAE --swpar=1 --swsim=1 
+#python -i OF_mix.py --ext=MC12 --switch=1 --nbest=1 --metric=MAE+RMSE2 --swpar=1 --swsim=1 
+#python -i OF_ranking_unc.py --ext=MC12 --switch=2 --nbest=30 --metric=KGE2012+MAE --swpar=1 --swsim=1 
+#python -i OF_mix.py --ext=MC12_SW --switch=1 --nbest=30 --metric=MAE+RMSE --swpar=1 --swsim=1 
+#python -i ComputeMisfits.py --ext=LHS4 --docopy=1 --byjob=1 --jobs=30 --clean=1
+#python -i ComputeMisfits.py --ext=LHS5 --docopy=1 --byjob=1 --jobs=$SGE_TASK_ID --clean=1
+#python -i ComputeMisfits.py --ext=LHS7 --docopy=1 --byjob=1 --jobs=2 --clean=0 --nruns=1500
+python -i ComputeMisfits.py --ext=LHS10 --docopy=1 --byjob=1 --jobs=$SGE_TASK_ID --clean=1 --nruns=1000

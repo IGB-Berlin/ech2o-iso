@@ -56,6 +56,7 @@ int CreateWorld(char* argv[]);
 int SolveTimeStep();
 int CalculateBudgets();
 int Report2Screen();
+int Report2nc();
 int Report2Maps();
 int Report2Ts();
 int CrunchWorld();

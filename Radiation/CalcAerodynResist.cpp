@@ -33,7 +33,6 @@
 REAL8 Basin::CalcAerodynResist(REAL8 u_za, REAL8 z_a, REAL8 z_0u, REAL8 z_du, REAL8 z_0o, REAL8 z_do, REAL8 Ht, REAL8 LAI,
 		REAL8 Ts, REAL8 Ta, INT4 option, bool surface) {
 
-
 	REAL8 rlog_u = 0;
 	REAL8 rlog_o = 0;
 	REAL8 rexp = 0;
@@ -41,8 +40,6 @@ REAL8 Basin::CalcAerodynResist(REAL8 u_za, REAL8 z_a, REAL8 z_0u, REAL8 z_du, RE
 	REAL8 a = 0;
 	REAL8 lm = 2;
 	REAL8 zt = (z_do + z_0o) * 0.8; // for the overstory, exponential resistance is for only half the canopy
-
-
 
 	if(surface == true){
 		rlog_u = rlog(u_za, z_a, z_du, z_0u, option);
@@ -63,7 +60,7 @@ REAL8 Basin::CalcAerodynResist(REAL8 u_za, REAL8 z_a, REAL8 z_0u, REAL8 z_du, RE
 	}
 	//otherwise resistance is simply the aerodynamic resistance associated with a logarithmic wind profile
 
-		return (rlog_u + rexp + rlog_o);
+	return (rlog_u + rexp + rlog_o);
 
 
 }

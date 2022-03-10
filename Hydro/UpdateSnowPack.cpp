@@ -35,15 +35,14 @@ int Basin::UpdateSnowPack(Atmosphere &atm, Control &ctrl){
 	int r, c;
 	double dt = ctrl.dt; //secs
 
-	for (unsigned int j = 0; j < _vSortedGrid.cells.size() ; j++)
-	{
-					r = _vSortedGrid.cells[j].row;
-					c = _vSortedGrid.cells[j].col;
+	for (unsigned int j = 0; j < _vSortedGrid.cells.size() ; j++)	{
+		r = _vSortedGrid.cells[j].row;
+		c = _vSortedGrid.cells[j].col;
 
-					if(atm.getTemperature()->matrix[r][c] < 0)
-						_snow->matrix[r][c] += atm.getPrecipitation()->matrix[r][c] * dt;
-					else
-						_ponding->matrix[r][c] += atm.getPrecipitation()->matrix[r][c] * dt;
+		if(atm.getTemperature()->matrix[r][c] < 0)
+			_snow->matrix[r][c] += atm.getPrecipitation()->matrix[r][c] * dt;
+		else
+			_incident_water_depth->matrix[r][c] += atm.getPrecipitation()->matrix[r][c] * dt;
 
 
 	}

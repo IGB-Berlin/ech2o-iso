@@ -43,7 +43,7 @@ vectCells Basin::SortGridLDD(){
 	    REAL4 value8 = 0;
 	    REAL4 value9 = 0;
 
-	    REAL4 flag;
+	    //	    REAL4 flag;
 	    REAL8 checked = _DEM->nodata;
 
 	    grid *temp;
@@ -112,7 +112,7 @@ vectCells Basin::SortGridLDD(){
 	                  value3 != 7 &&
 	                  value != _DEM->nodata)
 	              {
-	               flag = x;
+			//	               flag = x;
 
 	               map2array.cells.push_back(cell(r,c,(int)value));
 	              }

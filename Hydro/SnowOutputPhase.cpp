@@ -45,12 +45,9 @@ double Basin::SnowOutput(Atmosphere &atm, Control &ctrl, Tracking &trck,
 	
 	//if there is snow pack and latent heat of melt < 0
 	if (h > RNDOFFERR && meltheat < RNDOFFERR){
-	  //_Temp_s->matrix[row][col];//_Temp_s->matrix[row][col] = 0;
-	  //transform latent heat of melt into snowmelt depth
-	  dh = -meltheat * ctrl.dt / (lat_heat_fus*rho_w); 
-	  if (dh > h)//if this water energy equivalent is larger than the available snow pack
-	    dh = h; //the water output equals the water in the remaining snowpack
-  
+	  dh = -meltheat * ctrl.dt / (lat_heat_fus*rho_w); 	//transform LE of melt into snowmelt depth
+	  if (dh > h)						//if this water energy equivalent > SWE
+	    dh = h; 						// output = water in snowpack
 	  _snow->matrix[row][col] -= dh;
 
 	} else

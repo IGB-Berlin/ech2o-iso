@@ -35,9 +35,7 @@
 
 Atmosphere::Atmosphere(Control &ctrl){
 
-  //reset the errno value to ensure that any errors in loading the binaries inputs are not
-  // "leftovers" from BasinConstruct failures
-  errno = 0;
+  errno = 0;  //reset the errno value to isolate errors here (not from BasinConstruct)
 
   try{
 
@@ -50,8 +48,10 @@ Atmosphere::Atmosphere(Control &ctrl){
     _NZns = 0; //set to zero the initial zones in the climate time series files. This is the number of zones in the climate time series
 
     _vSsortedGridTotalCellNumber = 0;
+    #pragma omp parallel for
     for(unsigned int i = 0; i < _nzones; i++){
       _vSortedGrid[i].cells = SortGrid(_vSortedGrid[i].zone).cells; // fills the vectCells with actual domain cells (no nodata)
+      #pragma omp atomic      
       _vSsortedGridTotalCellNumber += _vSortedGrid[i].cells.size();
     }
 
@@ -65,8 +65,10 @@ Atmosphere::Atmosphere(Control &ctrl){
     _Precip = new grid (*_zones);
     _Rel_humid = new grid (*_zones);
     _Wind_speed = new grid (*_zones);
-    _d2Hprecip = NULL;
-    _d18Oprecip = NULL;
+    _Pa = new grid (*_zones);
+    _Anthr_Heat = NULL; //initialized below with switch    
+    _d2Hprecip = NULL; //initialized below with switch
+    _d18Oprecip = NULL; //initialized below with switch
 
     *_Ldown = *_zones;
     *_Sdown = *_zones;
@@ -76,7 +78,13 @@ Atmosphere::Atmosphere(Control &ctrl){
     *_Precip = *_zones;
     *_Rel_humid = *_zones;
     *_Wind_speed = *_zones;
+    *_Pa = *_zones;
 
+    // Urban fluxes
+    if(ctrl.sw_anthr_heat){
+      _Anthr_Heat = new grid(*_zones);
+      *_Anthr_Heat = *_zones;
+    }    
     // Tracking
     if(ctrl.sw_trck && ctrl.sw_2H){
       _d2Hprecip = new grid(*_zones);
@@ -94,10 +102,11 @@ Atmosphere::Atmosphere(Control &ctrl){
 
 
     try {
+      //      cout << (ctrl.path_ClimMapsFolder + ctrl.fn_Ldown).c_str() << endl;
       ifLdown.open((ctrl.path_ClimMapsFolder + ctrl.fn_Ldown).c_str(), ios::binary);
-      if(errno!=0) throw ctrl.fn_Ldown;  //echo_filenotfound_exception(ctrl.fn_Ldown.c_str(), "Dang! File not found: ");
+      if(errno!=0) throw ctrl.fn_Ldown;  
       ifSdown.open((ctrl.path_ClimMapsFolder + ctrl.fn_Sdown).c_str(), ios::binary);
-      if(errno!=0) throw ctrl.fn_Sdown;//echo_filenotfound_exception(ctrl.fn_Sdown.c_str(), "Dang! File not found: ");
+      if(errno!=0) throw ctrl.fn_Sdown;
       ifTp.open((ctrl.path_ClimMapsFolder + ctrl.fn_temp).c_str(), ios::binary);
       if(errno!=0) throw ctrl.fn_temp;
       ifMaxTp.open((ctrl.path_ClimMapsFolder + ctrl.fn_maxTemp).c_str(), ios::binary);
@@ -110,7 +119,14 @@ Atmosphere::Atmosphere(Control &ctrl){
       if(errno!=0) throw ctrl.fn_rel_humid;
       ifWindSpeed.open((ctrl.path_ClimMapsFolder + ctrl.fn_wind_speed).c_str(), ios::binary);
       if(errno!=0) throw ctrl.fn_wind_speed;
-
+      ifPa.open((ctrl.path_ClimMapsFolder + ctrl.fn_pressure).c_str(), ios::binary);
+      if(errno!=0) throw ctrl.fn_pressure;
+      
+      // Urban fluxes
+      if(ctrl.sw_anthr_heat){
+        ifAnthrHeat.open((ctrl.path_ClimMapsFolder + ctrl.fn_anthrop_heat).c_str(), ios::binary);
+	if(errno!=0) throw ctrl.fn_anthrop_heat;
+      }      
       // Tracking
       if(ctrl.sw_trck and ctrl.sw_2H){
 	ifd2Hprecip.open((ctrl.path_ClimMapsFolder + ctrl.fn_d2Hprecip).c_str(), ios::binary);
@@ -125,7 +141,6 @@ Atmosphere::Atmosphere(Control &ctrl){
       cout << "Dang!!: cannot find/read the" << e << "  file: error " << strerror(errno) << endl;
       throw;
     }
-
 			
     //Initiate Climate map returns the number of data written
     try{
@@ -146,20 +161,22 @@ Atmosphere::Atmosphere(Control &ctrl){
 	throw string("relative humidity");
       if(InitiateClimateMap(ifWindSpeed, *_Wind_speed)!= _vSsortedGridTotalCellNumber)
 	throw string("windspeed");
+      if(InitiateClimateMap(ifPa, *_Pa)!= _vSsortedGridTotalCellNumber)
+	throw string("pressure");
 
-      // Tracking: build inputs maps
+      // Urban: build input maps
+      if(ctrl.sw_anthr_heat)
+	if(InitiateClimateMap(ifAnthrHeat, *_Anthr_Heat)!= _vSsortedGridTotalCellNumber)
+	  throw string("anthropogenic heat");      
+      // Tracking: build input maps
       if(ctrl.sw_trck){
 	if(ctrl.sw_18O)
 	  if(InitiateClimateMap(ifd18Oprecip, *_d18Oprecip)!= _vSsortedGridTotalCellNumber)
 	    throw string("18O signature");
 
-
 	if(ctrl.sw_2H)
-	  if(InitiateClimateMap(ifd2Hprecip, *_d2Hprecip)!= _vSsortedGridTotalCellNumber){
-	    //std::cout << InitiateClimateMap(ifd2Hprecip, *_2Hprecip, 1, 0) << endl;
-	    //std::cout << _vSsortedGridTotalCellNumber << endl;
+	  if(InitiateClimateMap(ifd2Hprecip, *_d2Hprecip)!= _vSsortedGridTotalCellNumber)
 	    throw string("2H signature");
-	  }
       }
     }catch (string e){
       cout << "Error: some sections of the domain was not filled with " << e << " data." << endl;
@@ -185,6 +202,8 @@ Atmosphere::Atmosphere(Control &ctrl){
       delete _Precip;
       delete _Rel_humid;
       delete _Wind_speed;
+      delete _Pa;
+      delete _Anthr_Heat;      
       delete _d2Hprecip;
       delete _d18Oprecip;
 

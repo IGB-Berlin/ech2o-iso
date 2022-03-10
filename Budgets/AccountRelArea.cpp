@@ -29,13 +29,14 @@
  */
 #include "Budget.h"
 
-double Budget::AccountRelArea(const grid *map, const Basin *b)
+double Budget::AccountRelArea(const grid *map1, const grid *map2, const Basin *b)
 {
 
   UINT4 length = b->getSortedGrid().cells.size();
   UINT4 r, c;
   REAL8 result = 0;
-  
+  REAL8 result2= 0;
+  REAL8 dx = b->getCellSize();
 #pragma omp parallel for			\
   default(shared) private(r,c)			\
   reduction (+:result)
@@ -44,9 +45,10 @@ double Budget::AccountRelArea(const grid *map, const Basin *b)
     
     r = b->getSortedGrid().cells[i].row;
     c = b->getSortedGrid().cells[i].col;
-
-    result += (map->matrix[r][c]/length);
+    //result += (map->matrix[r][c]/length);
+    result2+= dx*dx*map2->matrix[r][c];
+    result += (map1->matrix[r][c]*dx*dx*map2->matrix[r][c]);
   }
   
-  return result;
+  return result/result2;
 }

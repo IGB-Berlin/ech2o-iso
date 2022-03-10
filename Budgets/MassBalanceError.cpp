@@ -32,74 +32,19 @@
 
 void Budget::MassBalanceError()
 {
-	double inputs = 0.0;
-	double outputs = 0.0;
-	double ds = 0.0;
+  double inputs = 0.0;
+  double outputs = 0.0;
+  double ds = 0.0;
 
-	/* inputs = precipitation + initsnowpack + initponding + initvadose;
-	// + initgravwater + initgrndwater; -> obsolete: gravity and groundwater embedded in vadose...	
-	outputs = evaporation + ovlndflow + gwtrflow + leakage;
+  inputs = precipitation + initsnowpack + initponding + initchan + initL1 + initL2 + initL3 + initGW;
 	
-	ds = canopy + snowpack + ponding + vadose;*/
-	//+ gravwater + grndwater;  -> obsolete: gravity and groundwater embedded in vadose...
+  outputs = evaporationS + evaporationI + transpiration + ovlndflow + gwtrflow + leakage;
 
-	inputs = precipitation + initsnowpack + initponding + initchan + initL1 + initL2 + initL3 + initGW;
+  ds = canopy + snowpack + ponding + chan_store + soilL1 + soilL2 + soilL3 + grndwater;
 
+  if(inputs>0) 
+    MBErr = 100/inputs*(inputs-outputs - ds);
+  else 
+    MBErr = 0;
 
-	
-	outputs = evaporationS + evaporationI + transpiration + ovlndflow + gwtrflow + leakage;
-	
-
-
-	ds = canopy + snowpack + ponding + chan_store + soilL1 + soilL2 + soilL3 + grndwater;
-
-
-	cout << "P:" << precipitation << " |Si:"<< initsnowpack << " |Pi:"<< initponding << " |Ci:" << initchan << 
-	  " |L1i:"<< initL1 << " |L2i:"<< initL2 << " |L3i:"<< initL3 << " |GWi:"<< initGW << endl;
-
-	cout << "Es:" << evaporationS  << " |Ei:" << evaporationI << " |Tr:" << transpiration << " |Ov:" <<
-	  ovlndflow << " |GW:" << gwtrflow << " |Le:" << leakage << endl;
-
-	cout << "Can:" << canopy << " |Sn:" << snowpack << " |Pon:" << ponding << " |Chn:" << chan_store << " |SL1:" <<
-	  soilL1 << " |SL2:" << soilL2 << " |SL3:" << soilL3 << " |GW:" << grndwater;
-
-
-
-	if(inputs>0) 
-	  MBErr = 100/inputs*(inputs-outputs - ds);
-	else 
-	  MBErr = 0;
-
-
-	/*
-	// Debugging verbose
-	cout << endl << "sum(precip): " << precipitation << 
-	  ", sum(Isnow): " << initsnowpack << 
-	  ", sum(Isurf): " << initponding << 
-	  //", sum(Ivadose): " << initvadose << endl;
-	  ", sum(IsoilL1): " << initL1 << 
-	  ", sum(IsoilL2): " << initL2 << 	
-	  ", sum(IsoilL3): " << initL3 << 
-	  ", sum(IGW): " << initGW << endl;
-	
-	cout << "sum(evapS): " << evaporationS << 
-	  ", sum(evapI): " << evaporationI << 
-	  ", sum(evapT): " << transpiration << 
-	  ", sum(OutSurf): " << ovlndflow << 
-	  ", sum(OutGW): " << gwtrflow << 
-	  ", sum(OutLeak): " << leakage << endl;
-	
-	cout << "sum(canopy): " << canopy << 
-	  ", sum(snowpack): " << snowpack << 
-	  ", sum(ponding): " << ponding << 
-	  //", sum(vadose): " << vadose << endl << endl;
-	  ", sum(soilL1): " << soilL1 << 
-	  ", sum(soilL2): " << soilL2 << 	
-	  ", sum(soilL3): " << soilL3 << 
-	  ", sum(GW): " << grndwater << endl << endl;
-	
-	cout << "sum(inputs): " << inputs << 
-	  ", sum(outputs): " << outputs <<
-	  ", sum(S) : " << ds <<endl;
-	*/  	
 }

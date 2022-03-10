@@ -30,20 +30,22 @@
 
 #include "Budget.h"
 
-void Budget::TotalPrecipitation(const grid* map, const Atmosphere *b)
+void Budget::TotalPrecipitation(const grid* map1, const grid* map2, const Atmosphere *b)
 {
-  precipitation += AccountFluxes(map, b);
+  precipitation += AccountFluxes(map1, map2, b);
 }
 
-void Budget::TotalPrecipitation_d2H(const grid* map1, const grid* map2, const Atmosphere *atm)
+void Budget::TotalPrecipitation_d2H(const grid* map1, const grid* map2,
+				    const grid* map3, const Atmosphere *atm)
 {
-  precipitation_d2H += AccountTrckFluxes(map1, map2, atm);
+  precipitation_d2H += AccountTrckFluxes(map1, map2, map3, atm);
   //precipitation_d2H = AccountTrckFluxes(map1, map2, atm);
 }
 
-void Budget::TotalPrecipitation_d18O(const grid* map1, const grid* map2, const Atmosphere *atm)
+void Budget::TotalPrecipitation_d18O(const grid* map1, const grid* map2,
+				     const grid* map3, const Atmosphere *atm)
 {
-  precipitation_d18O += AccountTrckFluxes(map1, map2, atm);
+  precipitation_d18O += AccountTrckFluxes(map1, map2, map3, atm);
   //precipitation_d18O = AccountTrckFluxes(map1, map2, atm);
 }
 

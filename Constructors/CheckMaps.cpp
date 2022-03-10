@@ -77,6 +77,12 @@ void Basin::CheckMaps(Control &ctrl) {
 	  throw e;
 	}
       }
+
+      if(_fImperv->matrix[r][c] < 0)
+	throw string("Fraction of impervious area is negative inside the valid domain ...\n");
+      if(_fImperv->matrix[r][c] > 1)
+	throw string("Fraction of impervious area is larger than 1 inside the valid domain ...\n");
+      
       if (_slope->matrix[r][c] <= 0) {
 	string e(
 		 "Slope map contains negative or zero values inside the valid domain...\n");
@@ -346,6 +352,17 @@ void Basin::CheckMaps(Control &ctrl) {
       if (_channelwidth->matrix[r][c] < 0) {
 	string e("The channel width map contains negative values\n");
 	throw e;
+      }
+      if (_channellength->matrix[r][c] < 0) {
+	string e("The channel length map contains negative values\n");
+	throw e;
+      }      
+      if(ctrl.sw_deepGW){
+	if (_Hydrofrac_DeepGW->matrix[r][c] > 0.5* _DeepGW->matrix[r][c]) {
+	  string e(
+		   "The hydrologically active fraction of deep groundwater is larger than 0.5...\n");
+	  throw e;
+	}
       }
     } catch (string &e) {
       cout << e;

@@ -63,7 +63,6 @@ Forest::Forest(Control &ctrl)
 	_species[i].CreateGridsd18O(_patches);
       if(ctrl.sw_trck && ctrl.sw_Age)
 	_species[i].CreateGridsAge(_patches);
-      //THIS PART DOES NOT CURRENTLY WORK      
       // If LAI is prescribed over time
       if(i < _Nsp - 1 and ctrl.toggle_veg_dyn == 2){
 	// Read file
@@ -75,10 +74,18 @@ Forest::Forest(Control &ctrl)
 	  cout << "Dang!!: cannot find/read the " << e << "  file: error " << strerror(errno) << endl;
 	  throw;
 	}
-	
+
+	fn.str(""); fn << ctrl.fn_hgt_timeseries << "_" << i << ".bin";
+	try{
+	  _species[i].ifhgt.open((ctrl.path_ClimMapsFolder + fn.str()).c_str(), ios::binary);
+	  if(errno!=0) throw fn.str();
+	} catch (string e) {
+	  cout << "Dang!!: cannot find/read the " << e << "  file: error " << strerror(errno) << endl;
+	  throw;
+	}
 	//Initiate LAI map
-	cout << "species " << i << ", input LAI file: " << fn.str() << endl ;
 	InitiateLAIMap(_species[i].ifLAI, *_species[i]._LAI);
+	InitiateLAIMap(_species[i].ifhgt, *_species[i]._Height);	
       }
       //
     }

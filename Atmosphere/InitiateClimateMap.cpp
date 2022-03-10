@@ -51,7 +51,9 @@ UINT4 Atmosphere::InitiateClimateMap(ifstream &ifHandle, grid &ClimMap){
     ifHandle.read((char *)TS, sizeof(float)*nTs);
     //reads one int with the number of zones
     ifHandle.read((char *)&nZns, sizeof(int));
-        
+
+    //    cout << "nZns: " << nZns << " |nzones " << _nzones << endl;
+    
     if(_NZns!=0) //if this is not the first time a climatic map is read and the number of zone is being set
       if(_NZns != (UINT4)nZns){ //make sure the number of zones in all climate time series are the same
 	cout << "The number of zones in two climatic time series differ. Number of zones in all climatic times series must be equal" << endl;
@@ -74,10 +76,9 @@ UINT4 Atmosphere::InitiateClimateMap(ifstream &ifHandle, grid &ClimMap){
     ifHandle.read((char *)data, sizeof(float)*nZns); //reads data for all zones
 
     int r, c;
-    
+#pragma omp parallel for default(none) private(r,c) shared(data,Zns, ClimMap, nZns) reduction(+:data_written)        
     for (UINT4 a = 0; a < nZns; a++ ){
       for (UINT4 i = 0; i < _vSortedGrid.size(); i++ ){
-
 	if(_vSortedGrid[i].zone == Zns[a])
 	  {
 	    //store the index of the climate data array that corresponds to the clim zones map
@@ -90,12 +91,10 @@ UINT4 Atmosphere::InitiateClimateMap(ifstream &ifHandle, grid &ClimMap){
 		c = _vSortedGrid[i].cells[j].col;
 		
 		ClimMap.matrix[r][c] = data[a];
-		//ClimMap.matrix[r][c] = data[a];
 
 		data_written++;
 		
 	      }
-
 	  }
       }
     }

@@ -49,7 +49,8 @@ struct Control{
   float report_times; //times at which report outputs time series
   float reportMap_times; //times at which report outputs maps
   float reportMap_start; // absolute time from which report outputs maps
-  
+  bool sw_netcdf; //switch to turn on and off the netcdf format for map outputs  
+
   float current_t_step; //current time step (seconds)
   unsigned int current_ts_count; //current count of time step
   
@@ -57,35 +58,56 @@ struct Control{
   /*Control switches*/
   string MapType; //indicates if the maps to be read are ASCII (grass) or PCRASTER (csf)
   string ForestStateVarsInputType; //indicates if the forest state variables are input as tables (tables) or maps (maps)
+
+  float closure_tolerance; //convergence tolerance for richards
   
   /*Option switches*/
   bool sw_reinfilt; //switch to turn on and off the reinfiltration option
   bool sw_channel; //switch to turn on and off the channel option
   bool sw_expKsat; //switch to turn on and off the exponential profile for hydraulic conductivity
   bool sw_expPoros; //switch to turn on and off the exponential profile for porosity
-  bool sw_chan_evap; //switch to turn on and off the channel evaporation processes
-  bool sw_ddSoilPar; //swith to turn on and off the import of different soil parameters for each layer
+  bool sw_anthr_heat; //switch to turn on and off anthropogenic heat
+  bool sw_BC; //switch for boundary conditions to be used
+  bool sw_intercept; //switch to allow throughfall with filling canopy
+  bool sw_LatSoil; //switch to allow for lateral soil flow (upper layers)
+  bool sw_deepGW; //switch to turn on and off the additional groundwater storage Deep GW
 
   /*multiple option switches*/
-  int toggle_infilt; //switch to 
-  //int toggle_soil_water_profile; //toggle between different soil moisture profile calculation
+  int toggle_chan_evap; //switch to turn on and off the channel evaporation processes and select energy v. mass transfer approaches
+  int toggle_hydrologic_engine; //switch to GA-Gravity and Richards approaches
+  int toggle_soil_prop; //switch between different soil parameter types
   int toggle_veg_dyn; //switch to turn on and off the dynamic vegetation module (allocation and lai calculation)
+  int toggle_plant_hydr; //switch to turn on and off the plant hydraulics
   int toggle_ra; //toggle between aerodynamic resistance options
   int toggle_rs; //toggle between different soil resistance option
+  int toggle_sm; //toggle switch for different stomatal models
+
+  string fn_BCsurface;
+  string fn_BCgroundwater;
+  string fn_BCdeepgwtr;
 
   // LAI time series binaries (if toggle_veg_dyn ==2)
   // file names (per species) = name below + "_"+ species number (starting at 0) + ".bin"
+  // Now also includes the hgt time series (crops)
   string fn_LAI_timeseries;
+  string fn_hgt_timeseries;
   
-  /*Base maps filenames*/
+   /*Base maps filenames*/
   string fn_dem; //local base dem filename that forces grid geometry
+  string fn_ttarea; // total areal proportion of each grid cell (boundary cells that are not fully covered in the basin domain 
   string fn_ldd; //local drain direction map filename
   string fn_chwidth; //channel width (m)
+  string fn_chlength; // channel length (m)
+  string fn_deepGW; //Deep GW 
+  string fn_hydro_deepGW;
   string fn_chgwparam; //channel water transfer parameter
+  string fn_chdeepgwparam; //channel water transfer parameter
   string fn_chmanningn; //channel roughness parameter
   
   /*Soil properties and parameters*/
+  string fn_ksat_skin; //soil hydraulic capcity of soil skin
   string fn_Ksat0; //top-of-column soil hydraulic conductivity ms-1
+  string fn_fimperv; // fraction of pixel that is impervious
   string fn_kKsat; //soil hydraulic conductivity profile coeff m
   string fn_kvkh; //vertical to horizontal ksat anisotropy ratio
   string fn_randrough; //terrain base random roughness to calcualte aerodynamic resistance (m)
@@ -98,8 +120,6 @@ struct Control{
   string fn_soildepth; //soil depth in m
   string fn_depth_layer1; //depth of layer 1 in m
   string fn_depth_layer2;  //depth of layer 2 in m. Layer 3 evaluated from soil depth
-  //string fn_root_fraction_lay1; //fraction of roots in soil layer 1
-  //string fn_root_fraction_lay2; // fraction of roots in soil layer 2. Soil layer 3 implied
   string fn_Kroot; // coefficient for exponential root profile, in m-1
   string fn_bedrock_leak; //bedrock leakance in s-1
   string fn_paramWc; //empirical parameter in water efficiency function for GPP calculation (see Landsber and Waring, 1997 or TRIPLEX paper
@@ -141,6 +161,8 @@ struct Control{
   string fn_precip; //
   string fn_rel_humid; //relative humidity
   string fn_wind_speed; //wind speed ms-1
+  string fn_pressure; //atmos pressure Pa
+  string fn_anthrop_heat; //anthropogenic heat Wm-2
   
   /*Forest patches and forest input files*/
   int NumSpecs; //number of tree species in the simulation
@@ -163,6 +185,11 @@ struct Control{
   bool Rep_AvgAir_Temperature;
   bool Rep_MinAir_Temperature;
   bool Rep_MaxAir_Temperature;
+  bool Rep_Anthropogenic_Heat;
+
+  bool Rep_BC_surface;
+  bool Rep_BC_groundwater;
+  
   bool Rep_SWE;
   bool Rep_Infilt_Cap;
   bool Rep_Streamflow;
@@ -174,25 +201,37 @@ struct Control{
   bool Rep_Soil_Water_Content_L2;
   bool Rep_Soil_Water_Content_L3;
   bool Rep_WaterTableDepth;
+  bool Rep_Soil_Sat_Deficit;
+  bool Rep_GWater;
+  bool Rep_DeepGWater;
+  bool Rep_Pond_F_Chn;  
   bool Rep_RootZone_in_L1;
   bool Rep_RootZone_in_L2;
   bool Rep_RootZone_in_L3;
   bool Rep_Field_Capacity_L1;
   bool Rep_Field_Capacity_L2;
   bool Rep_Field_Capacity_L3;
-  bool Rep_Soil_Sat_Deficit;
-  bool Rep_GWater;
+
   bool Rep_Soil_Net_Rad;
   bool Rep_Soil_LE;
   bool Rep_Sens_Heat;
   bool Rep_Grnd_Heat;
   bool Rep_Snow_Heat;
   bool Rep_Soil_Temperature;
+  bool Rep_SoilL1_Temperature;
+  bool Rep_SoilL2_Temperature;
+  bool Rep_SoilL3_Temperature;    
   bool Rep_Skin_Temperature;
+  bool Rep_Water_Temperature;
+  bool Rep_Net_Rad_sum;
+  bool Rep_LE_sum;
+  bool Rep_H_sum;  
   
   bool Rep_GWtoChn;
+  bool Rep_DeepGWtoChn;
   bool Rep_SrftoChn;
   bool Rep_GWtoChnacc;
+  bool Rep_DeepGWtoChnacc;
   bool Rep_SrftoChnacc;
 
   bool Rep_Infilt;
@@ -207,9 +246,11 @@ struct Control{
   bool Rep_LattoSrf;
   bool Rep_LattoChn;
   bool Rep_LattoGW;
+  bool Rep_LattoDeepGW;
   bool Rep_ChntoLat;
   bool Rep_SrftoLat;
   bool Rep_GWtoLat;
+  bool Rep_DeepGWtoLat;
 
   bool Rep_Infiltacc;
   bool Rep_Exfiltacc;
@@ -219,18 +260,15 @@ struct Control{
   bool Rep_Rechargeacc;
   bool Rep_ReturnL2acc;
   bool Rep_EvaporationSacc;
-  bool Rep_TranspiL1acc;
-  bool Rep_TranspiL2acc;
-  bool Rep_TranspiL3acc;
   bool Rep_LattoSrfacc;
   bool Rep_LattoChnacc;
   bool Rep_LattoGWacc;
+  bool Rep_LattoDeepGWacc;
   bool Rep_ChntoLatacc;
   bool Rep_SrftoLatacc;
   bool Rep_GWtoLatacc;
+  bool Rep_DeepGWtoLatacc;
 
-  bool Rep_Net_Rad_sum;
-  bool Rep_LE_sum;
   bool Rep_Total_ET;
   bool Rep_Transpiration_sum;
   bool Rep_Einterception_sum;
@@ -255,15 +293,18 @@ struct Control{
   bool Rep_Canopy_LE_T;
   bool Rep_Canopy_Sens_Heat;
   bool Rep_Canopy_Water_Stor;
+  bool Rep_RUptake_L1;
+  bool Rep_RUptake_L2;
+  bool Rep_RUptake_L3;  
   bool Rep_ETspecies;
   bool Rep_Transpiration;
+  bool Rep_TranspirationFlux;  
   bool Rep_Einterception;
   bool Rep_Esoil;
-
-  bool Rep_Water_Temperature;
+  bool Rep_SoilPot;
+  bool Rep_VegPot;
+  bool Rep_SapVel;
   bool Rep_ChanEvap;
-
-  bool Rep_Pond_F_Chn;
   
   /*time series reporting input files*/
   string fn_rep_mask;
@@ -278,6 +319,7 @@ struct Control{
   bool RepTs_AvgAir_Temperature;
   bool RepTs_MinAir_Temperature;
   bool RepTs_MaxAir_Temperature;
+  bool RepTs_Anthropogenic_Heat;
   bool RepTs_SWE;
   bool RepTs_Infilt_Cap;
   bool RepTs_Streamflow;
@@ -293,15 +335,20 @@ struct Control{
   bool RepTs_Field_Capacity_L3;
   bool RepTs_Soil_Sat_Deficit;
   bool RepTs_GroundWater;
+  bool RepTs_DeepGWater;
   bool RepTs_Soil_Net_Rad;
   bool RepTs_Soil_LE;
   bool RepTs_Sens_Heat;
   bool RepTs_Grnd_Heat;
   bool RepTs_Snow_Heat;
   bool RepTs_Soil_Temperature;
+  bool RepTs_SoilL1_Temperature;
+  bool RepTs_SoilL2_Temperature;
+  bool RepTs_SoilL3_Temperature;      
   bool RepTs_Skin_Temperature;
 
   bool RepTs_GWtoChn;
+  bool RepTs_DeepGWtoChn;
   bool RepTs_SrftoChn;
 
   bool RepTs_Infilt;
@@ -316,12 +363,15 @@ struct Control{
   bool RepTs_LattoSrf;
   bool RepTs_LattoChn;
   bool RepTs_LattoGW;
+  bool RepTs_LattoDeepGW;
   bool RepTs_ChntoLat;
   bool RepTs_SrftoLat;
   bool RepTs_GWtoLat;
+  bool RepTs_DeepGWtoLat;
 
   bool RepTs_Net_Rad_sum;
   bool RepTs_LE_sum;
+  bool RepTs_H_sum;  
   bool RepTs_Total_ET;
   bool RepTs_Transpiration_sum;
   bool RepTs_Einterception_sum;
@@ -333,6 +383,7 @@ struct Control{
   bool RepTs_RootFrac1Species;
   bool RepTs_RootFrac2Species;
   bool RepTs_Leaf_Area_Index;
+  bool RepTs_Stand_Age;
   bool RepTs_Canopy_Conductance;
   bool RepTs_GPP;
   bool RepTs_NPP;
@@ -345,11 +396,18 @@ struct Control{
   bool RepTs_Canopy_LE_T;
   bool RepTs_Canopy_Sens_Heat;
   bool RepTs_Canopy_Water_Stor;
+  bool RepTs_RUptake_L1;
+  bool RepTs_RUptake_L2;
+  bool RepTs_RUptake_L3;  
   bool RepTs_ETspecies;
   bool RepTs_Transpiration;
+  bool RepTs_TranspirationFlux;
   bool RepTs_Einterception;
   bool RepTs_Esoil;
-
+  bool RepTs_SoilPot;
+  bool RepTs_VegPot;
+  bool RepTs_SapVel;
+  
   bool RepTs_Water_Temperature;
   bool RepTs_ChanEvap;
 
@@ -364,7 +422,8 @@ struct Control{
   bool sw_Age; //switch to turn on and off the age tracking option (if sw_trck = 1)
   bool sw_frac; //switch to turn on and off fractionation in soil evap (if sw_trck = 1)
   bool sw_TPD; //switch to turn on the two pore domain option (if sw_trck = 1)
-
+  bool sw_int_mix; //switch to turn on the mixing of precip and intercepted water
+  
   // Toggle switch for fractionation
   bool sw_chan_frac;  //switch to turn on and off the channel fractionation (if sw_trck = 1)
   int toggle_hs; // toggle to choose which surface relative humidity for fractionation: 0->hs=1, 1->Lee&Pielke 1992, 2->Soderberg 2012
@@ -389,6 +448,8 @@ struct Control{
   string fn_d2Hsoil2;
   string fn_d2Hsoil3;
   string fn_d2Hgroundwater;
+  string fn_d2HDeepGW;
+  string fn_d2HsurfaceBC, fn_d2Hlayer1BC, fn_d2Hlayer2BC, fn_d2HgroundwaterBC;
   
   string fn_d18Oprecip; // O eighteen signature in precipitations (18O, per mil)
   //string fn_d2Hcanopy;
@@ -398,6 +459,9 @@ struct Control{
   string fn_d18Osoil2;
   string fn_d18Osoil3;
   string fn_d18Ogroundwater;
+  string fn_d18ODeepGW;
+
+  string fn_d18OsurfaceBC, fn_d18Olayer1BC, fn_d18Olayer2BC, fn_d18OgroundwaterBC;
   
   //string fn_Agecanopy;
   string fn_Agesnowpack;
@@ -406,6 +470,9 @@ struct Control{
   string fn_Agesoil2;
   string fn_Agesoil3;
   string fn_Agegroundwater;
+  string fn_AgeDeepGW;
+
+  string fn_AgesurfaceBC, fn_Agelayer1BC, fn_Agelayer2BC, fn_AgegroundwaterBC;
   
   /* maps report */
   bool Rep_Moist_MW1;
@@ -426,13 +493,19 @@ struct Control{
   bool Rep_d2Hsoil3;
   bool Rep_d2HsoilAv;
   bool Rep_d2Hgroundwater;
+  bool Rep_d2HdeepGW;
+  bool Rep_d2HdeepGWQ;
   bool Rep_d2Hleakage;
   bool Rep_d2HevapS;
   bool Rep_d2HevapS_sum;
   bool Rep_d2HevapI;
   bool Rep_d2HevapI_sum;
+  bool Rep_d2HevapI_Vap;
+  bool Rep_d2HevapI_Vap_sum;  
   bool Rep_d2HevapT;
   bool Rep_d2HevapT_sum;
+  bool Rep_d2HevapT_Vap;
+  bool Rep_d2HevapT_Vap_sum;  
   bool Rep_d2H_MW1;
   bool Rep_d2H_MW2;
   bool Rep_d2H_TB1;
@@ -450,13 +523,19 @@ struct Control{
   bool Rep_d18Osoil3;
   bool Rep_d18OsoilAv;
   bool Rep_d18Ogroundwater;
+  bool Rep_d18OdeepGW;
+  bool Rep_d18OdeepGWQ;
   bool Rep_d18Oleakage;
   bool Rep_d18OevapS;
   bool Rep_d18OevapS_sum;
   bool Rep_d18OevapI;
   bool Rep_d18OevapI_sum;
+  bool Rep_d18OevapI_Vap;
+  bool Rep_d18OevapI_Vap_sum;  
   bool Rep_d18OevapT;
   bool Rep_d18OevapT_sum;
+  bool Rep_d18OevapT_Vap;
+  bool Rep_d18OevapT_Vap_sum;  
   bool Rep_d18O_MW1;
   bool Rep_d18O_MW2;
   bool Rep_d18O_TB1;
@@ -473,6 +552,8 @@ struct Control{
   bool Rep_Agesoil3;
   bool Rep_AgesoilAv;
   bool Rep_Agegroundwater;
+  bool Rep_AgedeepGW;
+  bool Rep_AgedeepGWQ;
   bool Rep_Ageleakage;
   bool Rep_AgeevapS;
   bool Rep_AgeevapS_sum;
@@ -509,13 +590,19 @@ struct Control{
   bool RepTs_d2Hsoil3;
   bool RepTs_d2HsoilAv;
   bool RepTs_d2Hgroundwater;
+  bool RepTs_d2HdeepGW;
+  bool RepTs_d2HdeepGWQ;
   bool RepTs_d2Hleakage;
   bool RepTs_d2HevapS;
   bool RepTs_d2HevapS_sum;
   bool RepTs_d2HevapI;
   bool RepTs_d2HevapI_sum;
+  bool RepTs_d2HevapI_Vap;
+  bool RepTs_d2HevapI_Vap_sum;  
   bool RepTs_d2HevapT;
   bool RepTs_d2HevapT_sum;
+  bool RepTs_d2HevapT_Vap;
+  bool RepTs_d2HevapT_Vap_sum;  
   bool RepTs_d2H_MW1;
   bool RepTs_d2H_MW2;
   bool RepTs_d2H_TB1;
@@ -533,13 +620,19 @@ struct Control{
   bool RepTs_d18Osoil3;
   bool RepTs_d18OsoilAv;
   bool RepTs_d18Ogroundwater;
+  bool RepTs_d18OdeepGW;
+  bool RepTs_d18OdeepGWQ;
   bool RepTs_d18Oleakage;
   bool RepTs_d18OevapS;
   bool RepTs_d18OevapS_sum;
   bool RepTs_d18OevapI;
   bool RepTs_d18OevapI_sum;
+  bool RepTs_d18OevapI_Vap;
+  bool RepTs_d18OevapI_Vap_sum;  
   bool RepTs_d18OevapT;
   bool RepTs_d18OevapT_sum;
+  bool RepTs_d18OevapT_Vap;
+  bool RepTs_d18OevapT_Vap_sum;
   bool RepTs_d18O_MW1;
   bool RepTs_d18O_MW2;
   bool RepTs_d18O_TB1;
@@ -556,6 +649,8 @@ struct Control{
   bool RepTs_Agesoil3;
   bool RepTs_AgesoilAv;
   bool RepTs_Agegroundwater;
+  bool RepTs_AgedeepGW;
+  bool RepTs_AgedeepGWQ;
   bool RepTs_Ageleakage;
   bool RepTs_AgeevapS;
   bool RepTs_AgeevapS_sum;
@@ -587,7 +682,7 @@ struct Control{
     current_ts_count++;
     current_t_step = current_ts_count * dt;
   }
-  
+
   float GetTimeStep() {
     return current_t_step;
   }

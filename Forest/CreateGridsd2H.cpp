@@ -34,9 +34,13 @@ int Grove::CreateGridsd2H(grid *base){
 
 	try{
 		_d2Hcanopy = new grid (*base);
+		_d2Hthroughfall = new grid (*base);
 		_d2HevapI = new grid (*base);
 		_d2HevapT = new grid (*base);
 		_d2HevapS = new grid (*base);
+
+		_d2HevapI_Vap = new grid (*base);
+		_d2HevapT_Vap = new grid (*base);
 
 	}catch(const exception& e){
 

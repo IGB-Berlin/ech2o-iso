@@ -49,6 +49,9 @@ int Grove::CreateGrids(grid *base){
 		_Del_StemMass = new grid (*base);
 		_Del_RootMass = new grid (*base);
 		_Temp_c = new grid(*base);
+		_RUptakeL1 = new grid (*base);
+		_RUptakeL2 = new grid (*base);
+		_RUptakeL3 = new grid (*base);		
 		_NetR_Can = new grid (*base);
 		_LatHeat_CanE = new grid (*base);
 		_LatHeat_CanT = new grid (*base);
@@ -57,8 +60,11 @@ int Grove::CreateGrids(grid *base){
 		_ET = new grid (*base);
 		_Einterception = new grid (*base);
 		_Transpiration = new grid (*base);
+		_TranspirationFlux = new grid (*base);
 		_Esoil = new grid (*base);
+		_SoilWatPot = new grid (*base);		
 		_LeafWatPot = new grid (*base);
+		_SapVelocity = new grid (*base);
 		_rootfrac1 = new grid (*base);
 		_rootfrac2 = new grid (*base);
 

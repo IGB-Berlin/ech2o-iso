@@ -19,22 +19,22 @@
  *     along with Ech2o.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Contributors:
- *    Sylvain Kuppel
+ *    Sylvain Kuppel, Xiaoqiang Yang
  *******************************************************************************/
 /*
  * AccountTrckFluxes.cpp
  *
  *  Created on: Feb 28, 2018
- *      Author: Sylvain Kuppel
+ *      Author: Sylvain Kuppel, Aaron Smith
  */
 #include "Budget.h"
 
-double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Basin *b) {
+double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const grid *map3, const Basin *b) {
   
   UINT4 length = b->getSortedGrid().cells.size();
   UINT4 r, c;
   REAL8 result = 0;
-  REAL8 dx = b->getCellSize();
+  //  REAL8 dx = b->getCellSize();
   
 #pragma omp parallel for		     \
   default(shared) private(r,c)		     \
@@ -45,7 +45,51 @@ double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Basin
     r = b->getSortedGrid().cells[i].row;
     c = b->getSortedGrid().cells[i].col;
     
-    result +=  (map1->matrix[r][c] * map2->matrix[r][c] *dx*dx*dt);
+    result +=  (map1->matrix[r][c] * map2->matrix[r][c] *dx*dx*dt*map3->matrix[r][c] );
+    
+  }
+  
+  return result;
+}
+
+// incoming surface water
+double Budget::AccountTrckBCFluxesQ(const grid *map1, const grid *map2, const grid *map3, const Basin *b) {
+  UINT4 length = b->getSortedGrid().cells.size();
+  UINT4 r, c;
+  REAL8 result = 0;
+  REAL8 dx = b->getCellSize();
+  #pragma omp parallel for		     \
+  default(shared) private(r,c)		     \
+  reduction (+:result)
+  
+  for (UINT4 i = 0; i < length; i++) {
+    
+    r = b->getSortedGrid().cells[i].row;
+    c = b->getSortedGrid().cells[i].col;
+    // map 1 is already in cms
+    result +=  (map1->matrix[r][c] * map2->matrix[r][c] *dt*map3->matrix[r][c] );
+    
+  }
+  
+  return result;
+}
+
+// incoming surface water
+double Budget::AccountTrckBCFluxes(const grid *map1, const grid *map2, const grid *map3, const Basin *b) {
+  UINT4 length = b->getSortedGrid().cells.size();
+  UINT4 r, c;
+  REAL8 result = 0;
+  REAL8 dx = b->getCellSize();
+  #pragma omp parallel for		     \
+  default(shared) private(r,c)		     \
+  reduction (+:result)
+  
+  for (UINT4 i = 0; i < length; i++) {
+    
+    r = b->getSortedGrid().cells[i].row;
+    c = b->getSortedGrid().cells[i].col;
+    // map 1 is already in m2/s
+    result +=  (map1->matrix[r][c] * map2->matrix[r][c] *dx*dt*map3->matrix[r][c] );
     
   }
   
@@ -53,7 +97,7 @@ double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Basin
 }
 
 // Precip isotopes
-double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Atmosphere *b) {
+double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const grid *map3, const Atmosphere *b) {
   
   UINT4 zones = b->getSortedGrid().size();
   UINT4 r, c;
@@ -70,7 +114,7 @@ double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Atmos
       r = b->getSortedGrid()[i].cells[j].row;
       c = b->getSortedGrid()[i].cells[j].col;
       
-      result += (map1->matrix[r][c] * map2->matrix[r][c] * dx * dx * dt);
+      result += (map1->matrix[r][c] * map2->matrix[r][c] * dx * dx * dt * map3->matrix[r][c]);
       //result += (map1->matrix[r][c] * Delta2Ratio(map2->matrix[r][c], iso) * dx * dx * dt);
     }
   
@@ -78,7 +122,7 @@ double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Atmos
 }
 
 // Precip age: it's 0 at entry, but the budgets must account for aging previously-input precip!
-double Budget::AccountTrckFluxes(const grid *map, const Atmosphere *b){//, const Control *ctrl) {
+double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Atmosphere *b){//, const Control *ctrl) {
   
   UINT4 zones = b->getSortedGrid().size();
   UINT4 r, c;
@@ -95,7 +139,7 @@ double Budget::AccountTrckFluxes(const grid *map, const Atmosphere *b){//, const
       r = b->getSortedGrid()[i].cells[j].row;
       c = b->getSortedGrid()[i].cells[j].col;
       
-      result += map->matrix[r][c] * dx * dx * dt * dt / 86400; 
+      result += map1->matrix[r][c] * map2->matrix[r][c] * dx * dx * dt * dt / 86400; 
       // new input: has age 1 day at end-of-step
     }
   

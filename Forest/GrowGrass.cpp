@@ -49,10 +49,8 @@ int Forest::GrowGrass(UINT4 j, UINT4 r, UINT4 c, REAL8 dt){
   lai_d = _species[j]._grassLAI_d->matrix[r][c];
   lai_max = 5; //assumes lai_max is 5 as per Istanbulloglu (2012) eq 15a
 
-
   nf = 1 - ( lai_g / (lai_max - lai_d) );
   nr = 1 - nf;
-
 
   //Increase root Mass
   _species[j]._Del_RootMass->matrix[r][c] = _species[j]._NPP->matrix[r][c] * nr;

@@ -30,9 +30,9 @@
 
 #include "Budget.h"
 
-void Budget::TotalSaturationArea(const grid* map, const Basin *b)
+void Budget::TotalSaturationArea(const grid* map1, const grid* map2, const Basin *b)
 {
-	satarea = AccountRelArea(map, b);
+        satarea = AccountRelArea(map1, map2, b);
 }
 
 

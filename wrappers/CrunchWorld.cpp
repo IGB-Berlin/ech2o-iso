@@ -32,26 +32,20 @@
 
 int CrunchWorld(){
 
-	if(oControl)
-		delete oControl;
+  if(oControl)
+    delete oControl;
+  if(oBasin)
+    delete oBasin;
+  if(oAtmosphere)
+    delete oAtmosphere;
+  if(oBudget)
+    delete oBudget;
+  if(oReport)
+    delete oReport;
+  if(oTracking)
+    delete oTracking;
+  if(ofSummary.is_open())
+    ofSummary.close();
 
-	if(oBasin)
-		delete oBasin;
-
-	if(oAtmosphere)
-		delete oAtmosphere;
-
-	if(oBudget)
-		delete oBudget;
-
-	if(oReport)
-		delete oReport;
-
-	if(oTracking)
-		delete oTracking;
-
-	if(ofSummary.is_open())
-		ofSummary.close();
-
-		return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }

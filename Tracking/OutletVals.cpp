@@ -36,21 +36,33 @@ void Tracking::OutletVals(Control &ctrl, int mode, int r, int c)
   if (mode == 0){ // Initialization
     if(ctrl.sw_2H){
       _d2HOvlndOutput.cells.clear();
-      _d2HL1wtrOutput.cells.clear();
-      _d2HL2wtrOutput.cells.clear();
       _d2HGwtrOutput.cells.clear();
+      if(ctrl.sw_LatSoil){
+	_d2HL1wtrOutput.cells.clear();
+	_d2HL2wtrOutput.cells.clear();
+      }      
+      if(ctrl.sw_deepGW)
+	_d2HDeepGwtrOutput.cells.clear();
     }
     if(ctrl.sw_18O){
       _d18OOvlndOutput.cells.clear();
-      _d18OL1wtrOutput.cells.clear();
-      _d18OL2wtrOutput.cells.clear();
       _d18OGwtrOutput.cells.clear();
+      if(ctrl.sw_LatSoil){      
+	_d18OL1wtrOutput.cells.clear();
+	_d18OL2wtrOutput.cells.clear();
+      }      
+      if(ctrl.sw_deepGW)
+	_d18ODeepGwtrOutput.cells.clear();
     }
     if(ctrl.sw_Age){
       _AgeOvlndOutput.cells.clear();
-      _AgeL1wtrOutput.cells.clear();
-      _AgeL2wtrOutput.cells.clear();
       _AgeGwtrOutput.cells.clear();
+      if(ctrl.sw_LatSoil){            
+	_AgeL1wtrOutput.cells.clear();
+	_AgeL2wtrOutput.cells.clear();
+      }      
+      if(ctrl.sw_deepGW)
+	_AgeDeepGwtrOutput.cells.clear();
     }
   }
 
@@ -58,24 +70,36 @@ void Tracking::OutletVals(Control &ctrl, int mode, int r, int c)
 
     // Deuterium
     if(ctrl.sw_2H){
-      _d2HL1wtrOutput.cells.push_back(cell(r, c, _d2Hsoil1_Out->matrix[r][c]));
-      _d2HL2wtrOutput.cells.push_back(cell(r, c, _d2Hsoil2_Out->matrix[r][c]));
       _d2HGwtrOutput.cells.push_back(cell(r, c, _d2Hgroundwater->matrix[r][c]));
-      _d2HOvlndOutput.cells.push_back(cell(r, c, _d2Hsurface->matrix[r][c])); 
+      _d2HOvlndOutput.cells.push_back(cell(r, c, _d2Hsurface->matrix[r][c]));
+      if(ctrl.sw_LatSoil){                  
+	_d2HL1wtrOutput.cells.push_back(cell(r, c, _d2Hsoil1Q->matrix[r][c]));
+	_d2HL2wtrOutput.cells.push_back(cell(r, c, _d2Hsoil2Q->matrix[r][c]));
+      }
+      if(ctrl.sw_deepGW)
+	_d2HDeepGwtrOutput.cells.push_back(cell(r, c, _d2HdeepGWQ->matrix[r][c])); 
     }
     // Oxygen 18
     if(ctrl.sw_18O){
-      _d18OL1wtrOutput.cells.push_back(cell(r, c, _d18Osoil1_Out->matrix[r][c]));
-      _d18OL2wtrOutput.cells.push_back(cell(r, c, _d18Osoil2_Out->matrix[r][c]));
       _d18OGwtrOutput.cells.push_back(cell(r, c, _d18Ogroundwater->matrix[r][c]));
-      _d18OOvlndOutput.cells.push_back(cell(r, c, _d18Osurface->matrix[r][c])); 
+      _d18OOvlndOutput.cells.push_back(cell(r, c, _d18Osurface->matrix[r][c]));
+      if(ctrl.sw_LatSoil){                  
+	_d18OL1wtrOutput.cells.push_back(cell(r, c, _d18Osoil1Q->matrix[r][c]));
+	_d18OL2wtrOutput.cells.push_back(cell(r, c, _d18Osoil2Q->matrix[r][c]));
+      }
+      if(ctrl.sw_deepGW)
+        _d18ODeepGwtrOutput.cells.push_back(cell(r, c, _d18OdeepGWQ->matrix[r][c]));	
     }
     // Age
     if(ctrl.sw_Age){
-      _AgeL1wtrOutput.cells.push_back(cell(r, c, _Agesoil1_Out->matrix[r][c]));
-      _AgeL2wtrOutput.cells.push_back(cell(r, c, _Agesoil2_Out->matrix[r][c]));
       _AgeGwtrOutput.cells.push_back(cell(r, c, _Agegroundwater->matrix[r][c]));
-      _AgeOvlndOutput.cells.push_back(cell(r, c, _Agesurface->matrix[r][c])); 
+      _AgeOvlndOutput.cells.push_back(cell(r, c, _Agesurface->matrix[r][c]));
+      if(ctrl.sw_LatSoil){                  
+	_AgeL1wtrOutput.cells.push_back(cell(r, c, _Agesoil1Q->matrix[r][c]));
+	_AgeL2wtrOutput.cells.push_back(cell(r, c, _Agesoil2Q->matrix[r][c]));
+      }
+      if(ctrl.sw_deepGW)
+        _AgeDeepGwtrOutput.cells.push_back(cell(r, c, _AgedeepGWQ->matrix[r][c]));	  
     }
   }
 }

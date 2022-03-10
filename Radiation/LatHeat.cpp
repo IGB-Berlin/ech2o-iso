@@ -38,14 +38,13 @@ double Basin::LatHeat(Atmosphere &atm, double beta, double ra, double rs, double
   double gamma = 0;
   double z = 0;
   
-  airdens = AirDensity(atm.getTemperature()->matrix[row][col]); //kgm-3
+  airdens = AirDensity(atm.getTemperature()->matrix[row][col], atm.getPressure()->matrix[row][col]); //kgm-3
   es = SatVaporPressure(Ts); //vapor pressure at temp Ts in Pa
   ea = SatVaporPressure(atm.getTemperature()->matrix[row][col]) * atm.getRelativeHumidty()->matrix[row][col]; //vapor pressure at air temp in Pa
   z = _DEM->matrix[row][col];
-  gamma = PsychrometricConst(101325, z); //todo: replace with Pressure when implemented
+  gamma = PsychrometricConst(atm.getPressure()->matrix[row][col], z); //todo: replace with Pressure when implemented
   
   return
     (1/gamma) * (1/(ra + rs) + rc) * airdens * spec_heat_air * beta *(ea - es);
-  //	(1/((ra + rs + rc) * gamma)) * airdens * spec_heat_air *(ea - es);
   
 }

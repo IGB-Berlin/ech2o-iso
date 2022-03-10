@@ -30,9 +30,9 @@
 
 #include "Budget.h"
 
-void Budget::TotalGWtoChn(const grid *map, const Basin *b)
+void Budget::TotalGWtoChn(const grid *map1, const grid *map2, const Basin *b)
 {
-  gwtochn += AccountStorages(map, b);
+  gwtochn += AccountStorages(map1, map2, b);
   // AccountStorages is used because FluxGWtoChn is already in m/tstep
   // (no need to multiply by dt)
 }

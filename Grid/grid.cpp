@@ -44,7 +44,7 @@ grid::grid(UINT4 row, UINT4 cols): r(row), c(cols)
     matrix = new REAL8*[row];
     for (UINT4 i=0; i < row; i++)
       matrix[i] = new REAL8[cols];
-  }catch(std::bad_alloc){cerr << "unable to allocate memory...";
+  }catch(std::bad_alloc &){cerr << "unable to allocate memory...";
     cin.get(); exit(-1);}
 
 #pragma omp parallel for
@@ -53,7 +53,6 @@ grid::grid(UINT4 row, UINT4 cols): r(row), c(cols)
       matrix[i][j] = 0;
 
   north = south = east = west = nodata = dx = 0;
-
 
 }
 
@@ -81,7 +80,7 @@ grid::grid(const grid &m)
     matrix = new REAL8*[r];
     for (UINT4 i=0; i < r; i++)
       matrix[i] = new REAL8[c];
-  }catch(std::bad_alloc){
+  }catch(std::bad_alloc &){
     cerr << "unable to allocate memory...";
     cin.get();
     exit(-1);
@@ -137,7 +136,7 @@ grid& grid::operator=(const grid &m)
     matrix = new REAL8*[r];
     for (UINT4 i=0; i < r; i++)
       matrix[i] = new REAL8[c];
-  }catch(std::bad_alloc){
+  }catch(std::bad_alloc &){
     std::cerr << "unable to allocate memory...";
     cin.get();
     exit(-1);

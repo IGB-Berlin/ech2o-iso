@@ -49,6 +49,12 @@ int Report2Maps(){
   if(oControl->Rep_MaxAir_Temperature)
     WriteMapSeries(oAtmosphere->getMaxTemperature(), "TpMax", oControl->current_ts_count);
 
+  if(oControl->sw_BC){
+    if(oControl->Rep_BC_surface)
+      WriteMapSeries(oBasin->getBCsurface(), "BCs", oControl->current_ts_count);
+    if(oControl->Rep_BC_groundwater)
+      WriteMapSeries(oBasin->getBCgroundwater(), "BCgw", oControl->current_ts_count);
+  }
   // "Initial" values: stuff that doesn't change over time: only report the first occurence
   // of reportMap_times
   if(oControl->current_t_step == oControl->reportMap_times){
@@ -105,6 +111,10 @@ int Report2Maps(){
     WriteMapSeries(oBasin->getSaturationDeficit(), "SatDef", oControl->current_ts_count);
   if (oControl->Rep_GWater)
     WriteMapSeries(oBasin->getGrndWater(), "GW", oControl->current_ts_count);
+  if(oControl->sw_deepGW){
+    if (oControl->Rep_DeepGWater)
+      WriteMapSeries(oBasin->getDeepGW(), "deepGW", oControl->current_ts_count);
+  }
   if (oControl->Rep_Soil_Net_Rad)
     WriteMapSeries(oBasin->getNetRad(), "NRs", oControl->current_ts_count);
   if (oControl->Rep_Net_Rad_sum)
@@ -124,11 +134,13 @@ int Report2Maps(){
   if (oControl->Rep_Skin_Temperature)
     WriteMapSeries(oBasin->getSkinTemp(), "Tskin", oControl->current_ts_count);
 
-  if(oControl->sw_chan_evap){
-    if (oControl->Rep_Water_Temperature)
-      WriteMapSeries(oBasin->getTemp_w(), "Twater", oControl->current_ts_count);
+  if(oControl->toggle_chan_evap > 0){
     if (oControl->Rep_ChanEvap)
       WriteMapSeries(oBasin->getChanEvap(), "EvapC", oControl->current_ts_count);
+    if (oControl->toggle_chan_evap == 1){
+      if (oControl->Rep_Water_Temperature)
+	WriteMapSeries(oBasin->getTemp_w(), "Twater", oControl->current_ts_count);
+    }
   }
 
   if (oControl->Rep_Total_ET)
@@ -143,6 +155,10 @@ int Report2Maps(){
   // Internal vertical fluxes
   if (oControl->Rep_GWtoChn)
     WriteMapSeries(oBasin->getFluxGWtoChn(), "GWChn", oControl->current_ts_count);
+  if(oControl->sw_deepGW){
+    if (oControl->Rep_DeepGWtoChn)
+      WriteMapSeries(oBasin->getFluxDeepGWtoChn(), "DeepGWChn", oControl->current_ts_count);
+  }
   if (oControl->Rep_SrftoChn)
     WriteMapSeries(oBasin->getFluxSrftoChn(), "SrfChn", oControl->current_ts_count);
   if (oControl->Rep_Infilt)
@@ -168,15 +184,27 @@ int Report2Maps(){
     WriteMapSeries(oBasin->getFluxLattoChn(), "LChni", oControl->current_ts_count);
   if (oControl->Rep_LattoGW)
     WriteMapSeries(oBasin->getFluxLattoGW(), "LGWi", oControl->current_ts_count);
+  if(oControl->sw_deepGW){
+    if (oControl->Rep_LattoDeepGW)
+      WriteMapSeries(oBasin->getFluxLattoDeepGW(), "LDeepGWi", oControl->current_ts_count);
+  }
   if (oControl->Rep_ChntoLat)
     WriteMapSeries(oBasin->getFluxChntoLat(), "LChno", oControl->current_ts_count);
   if (oControl->Rep_SrftoLat)
     WriteMapSeries(oBasin->getFluxSrftoLat(), "LSrfo", oControl->current_ts_count);
   if (oControl->Rep_GWtoLat)
     WriteMapSeries(oBasin->getFluxGWtoLat(), "LGWo", oControl->current_ts_count);
+  if(oControl->sw_deepGW){
+    if (oControl->Rep_DeepGWtoLat)
+      WriteMapSeries(oBasin->getFluxDeepGWtoLat(), "LDeepGWo", oControl->current_ts_count);
+  }
   // Cumulative values
   if (oControl->Rep_GWtoChnacc)
     WriteMapSeries(oBasin->getAccGWtoChn(), "GWChnA", oControl->current_ts_count);
+  if(oControl->sw_deepGW){
+    if (oControl->Rep_DeepGWtoChnacc)
+      WriteMapSeries(oBasin->getAccDeepGWtoChn(), "DeepGWChnA", oControl->current_ts_count);
+  }
   if (oControl->Rep_SrftoChnacc)
     WriteMapSeries(oBasin->getAccSrftoChn(), "SrfChnA", oControl->current_ts_count);
   if (oControl->Rep_Infiltacc)
@@ -195,22 +223,24 @@ int Report2Maps(){
     WriteMapSeries(oBasin->getAccL3toL2(), "RL2A", oControl->current_ts_count);
   if (oControl->Rep_EvaporationSacc)
     WriteMapSeries(oBasin->getAccEvaporationS(), "EsA", oControl->current_ts_count);
-  if (oControl->Rep_TranspiL1acc)
-    WriteMapSeries(oBasin->getAccTranspiL1(), "TrpL1A", oControl->current_ts_count);
-  if (oControl->Rep_TranspiL2acc)
-    WriteMapSeries(oBasin->getAccTranspiL2(), "TrpL2A", oControl->current_ts_count);
-if (oControl->Rep_TranspiL3acc)
-    WriteMapSeries(oBasin->getAccTranspiL3(), "TrpL3A", oControl->current_ts_count);
   if (oControl->Rep_LattoSrfacc)
     WriteMapSeries(oBasin->getAccLattoSrf(), "LSrfiA", oControl->current_ts_count);
   if (oControl->Rep_LattoChnacc)
     WriteMapSeries(oBasin->getAccLattoChn(), "LChniA", oControl->current_ts_count);
   if (oControl->Rep_LattoGWacc)
     WriteMapSeries(oBasin->getAccLattoGW(), "LGWiA", oControl->current_ts_count);
+  if(oControl->sw_deepGW){
+    if (oControl->Rep_LattoDeepGWacc)
+      WriteMapSeries(oBasin->getAccLattoDeepGW(), "LDeepGWiA", oControl->current_ts_count);
+  }
   if (oControl->Rep_SrftoLatacc)
     WriteMapSeries(oBasin->getAccSrftoLat(), "LSrfoA", oControl->current_ts_count);
   if (oControl->Rep_GWtoLatacc)
     WriteMapSeries(oBasin->getAccGWtoLat(), "LGWoA", oControl->current_ts_count);
+  if(oControl->sw_deepGW){
+    if (oControl->Rep_DeepGWtoLatacc)
+      WriteMapSeries(oBasin->getAccDeepGWtoLat(), "LDeepGWoA", oControl->current_ts_count);
+  }
   if (oControl->Rep_ChntoLatacc)
     WriteMapSeries(oBasin->getAccChntoLat(), "LChnoA", oControl->current_ts_count);
 
@@ -251,6 +281,12 @@ if (oControl->Rep_TranspiL3acc)
       WriteMapSeries(oTracking->getd2Hsoil_Av(), "dHsAv", oControl->current_ts_count);
     if (oControl->Rep_d2Hgroundwater)
       WriteMapSeries(oTracking->getd2Hgroundwater(), "dHgw", oControl->current_ts_count);
+    if(oControl->sw_deepGW){
+      if (oControl->Rep_d2HdeepGW)
+	WriteMapSeries(oTracking->getd2HdeepGW(), "dHdeepgw", oControl->current_ts_count);
+      if (oControl->Rep_d2HdeepGWQ)
+	WriteMapSeries(oTracking->getd2HdeepGWQ(), "dHdeepgwQ", oControl->current_ts_count);
+    }
     if (oControl->Rep_d2Hleakage)
       WriteMapSeries(oTracking->getd2Hleakage(), "dHlk", oControl->current_ts_count);
     if (oControl->Rep_d2HevapS_sum)
@@ -294,6 +330,12 @@ if (oControl->Rep_TranspiL3acc)
       WriteMapSeries(oTracking->getd18Osoil_Av(), "dOsAv", oControl->current_ts_count);
     if (oControl->Rep_d18Ogroundwater)
       WriteMapSeries(oTracking->getd18Ogroundwater(), "dOgw", oControl->current_ts_count);
+    if(oControl->sw_deepGW){
+      if (oControl->Rep_d18OdeepGW)
+	WriteMapSeries(oTracking->getd18OdeepGW(), "dOdeepgw", oControl->current_ts_count);
+      if (oControl->Rep_d18OdeepGWQ)
+	WriteMapSeries(oTracking->getd18OdeepGWQ(), "dOdeepgwQ", oControl->current_ts_count);
+    }    
     if (oControl->Rep_d18Oleakage)
       WriteMapSeries(oTracking->getd18Oleakage(), "dOlk", oControl->current_ts_count);
     if (oControl->Rep_d18OevapS_sum)
@@ -344,6 +386,12 @@ if (oControl->Rep_TranspiL3acc)
       WriteMapSeries(oTracking->getAgeevapT_sum(), "AgeeT", oControl->current_ts_count);
     if (oControl->Rep_AgeGWtoChn)
       WriteMapSeries(oTracking->getAgeGWtoChn(), "AgeGWQ", oControl->current_ts_count);
+    if(oControl->sw_deepGW){
+      if (oControl->Rep_AgedeepGW)
+	WriteMapSeries(oTracking->getAgedeepGW(), "Agedeepgw", oControl->current_ts_count);
+      if (oControl->Rep_AgedeepGWQ)
+	WriteMapSeries(oTracking->getAgedeepGWQ(), "AgedeepgwQ", oControl->current_ts_count);
+    }    
     if (oControl->Rep_AgeSrftoChn)
       WriteMapSeries(oTracking->getAgeSrftoChn(), "AgeSrfQ", oControl->current_ts_count);
     if (oControl->Rep_AgeRecharge)
@@ -717,13 +765,6 @@ int Report2Ts(){
 			      oControl->path_ResultsFolder + "Streamflow.tab",
 			      oControl->current_ts_count);
   }
-  /*  if (oControl->RepTs_Ponding){
-    if(oControl->GetTimeStep() <= oControl->report_times)
-      oReport->RenameFile(oControl->path_ResultsFolder + "Ponding.tab");
-    oReport->ReportTimeSeries(oBasin->getPondingWater(),
-			      oControl->path_ResultsFolder + "Ponding.tab",
-			      oControl->current_ts_count);
-			      }*/
   if (oControl->RepTs_Ponding){
     if(oControl->GetTimeStep() <= oControl->report_times)
       oReport->RenameFile(oControl->path_ResultsFolder + "Ponding.tab");
@@ -786,6 +827,15 @@ int Report2Ts(){
     oReport->ReportTimeSeries(oBasin->getGrndWater(),
 			      oControl->path_ResultsFolder + "GroundWater.tab",
 			      oControl->current_ts_count);
+  }
+  if(oControl->sw_deepGW){
+    if (oControl->Rep_DeepGWater){
+      if (oControl->GetTimeStep() <= oControl->report_times)
+	oReport->RenameFile(oControl->path_ResultsFolder + "DeepGroundWater.tab");
+      oReport->ReportTimeSeries(oBasin->getGrndWater(),
+				oControl->path_ResultsFolder + "DeepGroundWater.tab",
+				oControl->current_ts_count);
+    }
   }
   if (oControl->RepTs_Soil_Net_Rad){
     if(oControl->GetTimeStep() <= oControl->report_times)
@@ -857,20 +907,22 @@ int Report2Ts(){
 
 
 
-  if(oControl->sw_chan_evap){
-    if (oControl->RepTs_Water_Temperature){
-      if(oControl->GetTimeStep() <= oControl->report_times)
-	oReport->RenameFile(oControl->path_ResultsFolder + "WaterTemp.tab");
-      oReport->ReportTimeSeries(oBasin->getTemp_w(),
-				oControl->path_ResultsFolder + "WaterTemp.tab",
-				oControl->current_ts_count);
-    }
+  if(oControl->toggle_chan_evap > 0){
     if (oControl->RepTs_ChanEvap){
       if(oControl->GetTimeStep() <= oControl->report_times)
 	oReport->RenameFile(oControl->path_ResultsFolder + "EvapC.tab");
       oReport->ReportTimeSeries(oBasin->getChanEvap(),
 				oControl->path_ResultsFolder + "EvapC.tab",
 				oControl->current_ts_count);
+    }
+    if(oControl->toggle_chan_evap == 1){
+      if (oControl->RepTs_Water_Temperature){
+	if(oControl->GetTimeStep() <= oControl->report_times)
+	  oReport->RenameFile(oControl->path_ResultsFolder + "WaterTemp.tab");
+	oReport->ReportTimeSeries(oBasin->getTemp_w(),
+				  oControl->path_ResultsFolder + "WaterTemp.tab",
+				  oControl->current_ts_count);
+      }
     }
   }
 
@@ -910,6 +962,15 @@ int Report2Ts(){
     oReport->ReportTimeSeries(oBasin->getFluxGWtoChn(),
 			      oControl->path_ResultsFolder + "GWtoChn.tab",
 			      oControl->current_ts_count);
+  }
+  if(oControl->sw_deepGW){
+    if (oControl->RepTs_DeepGWtoChn){
+      if(oControl->GetTimeStep() <= oControl->report_times)
+	oReport->RenameFile(oControl->path_ResultsFolder + "DeepGWtoChn.tab");
+      oReport->ReportTimeSeries(oBasin->getFluxDeepGWtoChn(),
+				oControl->path_ResultsFolder + "DeepGWtoChn.tab",
+				oControl->current_ts_count);
+    }
   }
   if (oControl->RepTs_SrftoChn){
     if(oControl->GetTimeStep() <= oControl->report_times)
@@ -995,6 +1056,15 @@ int Report2Ts(){
 			      oControl->path_ResultsFolder + "GWLatI.tab",
 			      oControl->current_ts_count);
   }
+  if(oControl->sw_deepGW){
+    if (oControl->RepTs_LattoDeepGW){
+      if(oControl->GetTimeStep() <= oControl->report_times)
+	oReport->RenameFile(oControl->path_ResultsFolder + "DeepGWLatI.tab");
+      oReport->ReportTimeSeries(oBasin->getFluxLattoDeepGW(),
+				oControl->path_ResultsFolder + "DeepGWLatI.tab",
+				oControl->current_ts_count);
+    }
+  }
   if (oControl->RepTs_ChntoLat){
     if(oControl->GetTimeStep() <= oControl->report_times)
       oReport->RenameFile(oControl->path_ResultsFolder + "ChnLatO.tab");
@@ -1015,6 +1085,15 @@ int Report2Ts(){
     oReport->ReportTimeSeries(oBasin->getFluxGWtoLat(),
 			      oControl->path_ResultsFolder + "GWLatO.tab",
 			      oControl->current_ts_count);
+  }
+  if(oControl->sw_deepGW){
+    if (oControl->RepTs_DeepGWtoLat){
+      if(oControl->GetTimeStep() <= oControl->report_times)
+	oReport->RenameFile(oControl->path_ResultsFolder + "DeepGWLatO.tab");
+      oReport->ReportTimeSeries(oBasin->getFluxDeepGWtoLat(),
+				oControl->path_ResultsFolder + "DeepGWLatO.tab",
+				oControl->current_ts_count);
+    }
   }
   // Tracking	
   // two-pore domain
@@ -1143,6 +1222,22 @@ int Report2Ts(){
       oReport->ReportTimeSeries(oTracking->getd2Hgroundwater(),
 				oControl->path_ResultsFolder + "d2H_groundwater.tab",
 				oControl->current_ts_count);
+    }
+    if(oControl->sw_deepGW){
+      if (oControl->RepTs_d2HdeepGW){
+	if(oControl->GetTimeStep() <= oControl->report_times)
+	  oReport->RenameFile(oControl->path_ResultsFolder + "d2H_DeepGW.tab");
+	oReport->ReportTimeSeries(oTracking->getd2HdeepGW(),
+				  oControl->path_ResultsFolder + "d2H_DeepGW.tab",
+				  oControl->current_ts_count);
+      }
+      if (oControl->RepTs_d2HdeepGWQ){
+	if(oControl->GetTimeStep() <= oControl->report_times)
+	  oReport->RenameFile(oControl->path_ResultsFolder + "d2H_DeepGWQ.tab");
+	oReport->ReportTimeSeries(oTracking->getd2HdeepGWQ(),
+				  oControl->path_ResultsFolder + "d2H_DeepGWQ.tab",
+				  oControl->current_ts_count);
+      }
     }
     if (oControl->RepTs_d2Hleakage){
       if(oControl->GetTimeStep() <= oControl->report_times)
@@ -1291,7 +1386,22 @@ int Report2Ts(){
 				oControl->path_ResultsFolder + "d18O_groundwater.tab",
 				oControl->current_ts_count);
     }
-
+    if(oControl->sw_deepGW){
+      if (oControl->RepTs_d18OdeepGW){
+	if(oControl->GetTimeStep() <= oControl->report_times)
+	  oReport->RenameFile(oControl->path_ResultsFolder + "d18O_DeepGW.tab");
+	oReport->ReportTimeSeries(oTracking->getd18OdeepGW(),
+				  oControl->path_ResultsFolder + "d18O_DeepGW.tab",
+				  oControl->current_ts_count);
+      }
+      if (oControl->RepTs_d18OdeepGWQ){
+	if(oControl->GetTimeStep() <= oControl->report_times)
+	  oReport->RenameFile(oControl->path_ResultsFolder + "d18O_DeepGWQ.tab");
+	oReport->ReportTimeSeries(oTracking->getd18OdeepGWQ(),
+				  oControl->path_ResultsFolder + "d18O_DeepGWQ.tab",
+				  oControl->current_ts_count);
+      }
+    }
     if (oControl->RepTs_d18Oleakage){
       if(oControl->GetTimeStep() <= oControl->report_times)
 	oReport->RenameFile(oControl->path_ResultsFolder + "d18O_leakage.tab");
@@ -1435,7 +1545,22 @@ int Report2Ts(){
 				oControl->path_ResultsFolder + "Age_groundwater.tab",
 				oControl->current_ts_count);
     }
-
+    if(oControl->sw_deepGW){
+      if (oControl->RepTs_AgedeepGW){
+	if(oControl->GetTimeStep() <= oControl->report_times)
+	  oReport->RenameFile(oControl->path_ResultsFolder + "Age_DeepGW.tab");
+	oReport->ReportTimeSeries(oTracking->getAgedeepGW(),
+				  oControl->path_ResultsFolder + "Age_DeepGW.tab",
+				  oControl->current_ts_count);
+      }
+      if (oControl->RepTs_AgedeepGWQ){
+	if(oControl->GetTimeStep() <= oControl->report_times)
+	  oReport->RenameFile(oControl->path_ResultsFolder + "Age_DeepGWQ.tab");
+	oReport->ReportTimeSeries(oTracking->getAgedeepGWQ(),
+				  oControl->path_ResultsFolder + "Age_DeepGWQ.tab",
+				  oControl->current_ts_count);
+      }
+    }
     if (oControl->RepTs_Ageleakage){
       if(oControl->GetTimeStep() <= oControl->report_times)
 	oReport->RenameFile(oControl->path_ResultsFolder + "Age_leakage.tab");

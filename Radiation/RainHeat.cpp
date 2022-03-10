@@ -37,7 +37,7 @@ double Basin::RainHeat(Atmosphere &atm, double R, int row, int col){
 
 	Ta = atm.getTemperature()->matrix[row][col];
 
-					return
-						rho_w * spec_heat_water * R * Ta;  //returns heat advected by rain in Wm-2. R is rainfall intensity in ms-1
+	return
+		rho_w * spec_heat_water * R * Ta;  //returns heat advected by rain in Wm-2. R is rainfall intensity in ms-1
 
 }

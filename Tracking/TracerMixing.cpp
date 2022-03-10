@@ -45,26 +45,6 @@ void Tracking::TracerMixing(Basin &bsn, Control &ctrl,
   double f = 0;
   double intexp  = 0;
   double intfrac = 0;
-  double nstep = 10; // this was chosen as it provides a reasonable "sub" step for incomplete mixing
-
-  // --------------------------------------------------------------------------------------------------
-  //   Incomplete mixing -- Kumaraswamy distribution (similar to beta distribution)
-  double alpha = 0;
-  double alphaMix = 0;
-  double beta = 1;
-  double mixfrac = 0; // mixing fraction of water for outflow
-  double mixfracV= 0; // mixing fraction of water for storage - damped compared to outflow
-  double stepin = 0;
-  double stepout = 0;
-  double stepV = 0;
-  double istep_old = iold;
-  double mixV = 0;
-  double qout_iout=0;
-  if (mixmod == 3){
-    alpha = bsn.getIncompAlpha()->matrix[r][c];
-    alphaMix = alpha > 1 ? 1/alpha : alpha;
-    stepV = hold;
-  }
 
   // MIX MOD 0
   if(mixmod==0){

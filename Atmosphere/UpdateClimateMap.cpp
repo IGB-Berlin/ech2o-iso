@@ -42,10 +42,10 @@ int Atmosphere::UpdateClimateMap(ifstream &ifHandle, grid &ClimMap){
 
   int r, c;
 
-  //	for (unsigned int a = 0; a < _nzones; a++ ) //loops only over the number of zones in the climate zone map, not in the climate dataset
+#pragma omp parallel default(none) private(r,c) shared(data_written, data, ClimMap)
+  {
+#pragma omp for reduction(+:data_written)
   for (unsigned int i = 0; i < _vSortedGrid.size() ; i++)
-    //if(_vSortedGrid[i].zone == _zoneId[a])
-    //{
     for (unsigned int j = 0; j < _vSortedGrid[i].cells.size() ; j++)
       {
 	r = _vSortedGrid[i].cells[j].row;
@@ -54,7 +54,7 @@ int Atmosphere::UpdateClimateMap(ifstream &ifHandle, grid &ClimMap){
 	ClimMap.matrix[r][c] = data[_zoneId[i]];
 	data_written++;
       }
-  //		}
+  }
 
 
   delete[] data;

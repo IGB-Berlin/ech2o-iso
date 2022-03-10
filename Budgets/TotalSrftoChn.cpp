@@ -30,9 +30,9 @@
 
 #include "Budget.h"
 
-void Budget::TotalSrftoChn(const grid *map, const Basin *b)
+void Budget::TotalSrftoChn(const grid *map1, const grid *map2, const Basin *b)
 {
-  srftochn += AccountStorages(map, b);
+  srftochn += AccountStorages(map1, map2, b);
   // AccountStorages is used because FluxSrftoChn is already in m/tstep
   // (not needs to multiply by dt)
 }

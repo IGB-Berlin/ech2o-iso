@@ -31,7 +31,7 @@
 #include "Forest.h"
 #include "ConstAndFuncs.h"
 
-UINT4 Forest::InitiateLAIMap(ifstream &ifHandle, grid &LAIMap){
+UINT4 Forest::InitiateLAIMap(ifstream &ifHandle, grid &DataMap){
 
   char comment[256];
   UINT4 nZns; //number of zones as read from the climatic data file
@@ -57,7 +57,7 @@ UINT4 Forest::InitiateLAIMap(ifstream &ifHandle, grid &LAIMap){
     Zns = new UINT4[nZns];
     ifHandle.read((char *)Zns, sizeof(UINT4)*nZns); //read as many zones as there are zones in teh map
 
-    cout << "nZns: " << nZns << " |nzones: "<< nzones<< endl;
+    //    cout << "nZns: " << nZns << " |nzones: "<< nzones<< endl;
     
     if(nZns- nzones < 0){
       cout << "FATAL ERROR: there are " << nzones << " counted in the map " << "and only " << nZns << "in the climate dataset" << endl;
@@ -80,7 +80,7 @@ UINT4 Forest::InitiateLAIMap(ifstream &ifHandle, grid &LAIMap){
 	r = _vSortedGrid.cells[k].row;
 	c = _vSortedGrid.cells[k].col;
 	
-	LAIMap.matrix[r][c] = data[0];
+	DataMap.matrix[r][c] = data[0];
 	data_written++;
 	
       }

@@ -33,12 +33,11 @@
 int Forest::AdvanceLAIMaps(){
 
   for(UINT4 i = 0; i < _Nsp - 1; i++){
-    //    cout << "Species " << i << " started" << endl; 
     UpdateLAIMap(_species[i].ifLAI, *_species[i]._LAI);
-    //    cout << "Species " << i << " finished" << endl;
+    // Now also update the height map
+    UpdateLAIMap(_species[i].ifhgt, *_species[i]._Height);    
   }
    
-  //  cout << "All done LAI " << endl;
   return EXIT_SUCCESS;
   
 }

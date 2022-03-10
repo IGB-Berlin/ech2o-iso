@@ -30,9 +30,9 @@
 
 #include "Budget.h"
 
-void Budget::TotalRecharge(const grid *map, const Basin *b)
+void Budget::TotalRecharge(const grid *map1, const grid *map2, const Basin *b)
 {
-  recharge += AccountStorages(map, b);
+  recharge += AccountStorages(map1, map2, b);
   // AccountStorages is used because FluxRecharge is already in m/tstep
   // (no need to multiply by dt)
 }

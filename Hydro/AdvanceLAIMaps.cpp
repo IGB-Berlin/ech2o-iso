@@ -33,7 +33,6 @@
 int Basin::AdvanceLAIMaps() {
 
   fForest->AdvanceLAIMaps();
-  //  cout << "Finish advance LAI" << endl;
 
   return EXIT_SUCCESS;
 }

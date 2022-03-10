@@ -32,11 +32,10 @@
 
 int Forest::GrowRoots(UINT4 spec, UINT4 row, UINT4 col, REAL8 dt){
 
+	_species[spec]._RootMass->matrix[row][col] += max<REAL8>(-0.95*_species[spec]._RootMass->matrix[row][col], 
+							_species[spec]._Del_RootMass->matrix[row][col] - 
+							_species[spec]._RootMass->matrix[row][col] * _species[spec].RootTurnover * dt);
 
-  //_species[spec]._RootMass->matrix[row][col] += max<REAL8>(-0.95*_species[spec]._Del_RootMass->matrix[row][col], _species[spec]._Del_RootMass->matrix[row][col] -
-  // _species[spec]._RootMass->matrix[row][col] * _species[spec].RootTurnover * dt);
-  _species[spec]._RootMass->matrix[row][col] += max<REAL8>(-0.95*_species[spec]._RootMass->matrix[row][col], _species[spec]._Del_RootMass->matrix[row][col] - _species[spec]._RootMass->matrix[row][col] * _species[spec].RootTurnover * dt);
-
-	return EXIT_SUCCESS;
+  	return EXIT_SUCCESS;
 
 }

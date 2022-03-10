@@ -52,11 +52,10 @@ int Basin::CalcInitialStreamStorage(){
 	    if(w > 0) {
 	      a = powl(powl(w,0.67)*n/sqrtS, 0.6); //wetted perimeter is approximated with channel width
 	      Q = _Disch_old->matrix[r][c];
-	      _ponding->matrix[r][c] = Q > 0 ? a * powl(Q, 0.6)/_dx : 0.0;
+	      _chan_store->matrix[r][c] = Q > 0 ? a * powl(Q, 0.6)/_channellength->matrix[r][c] : 0.0;
 	    } else {
-	      _ponding->matrix[r][c] = 0.0;
+	      _chan_store->matrix[r][c] = 0.0;
 	    }
-	    
 	  }
 
 	return EXIT_SUCCESS;

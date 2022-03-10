@@ -9,7 +9,6 @@ CPP_SRCS += \
 ../Radiation/LatHeat.cpp \
 ../Radiation/MeltHeat.cpp \
 ../Radiation/NetRad.cpp \
-../Radiation/NetRad_water.cpp \
 ../Radiation/RainHeat.cpp \
 ../Radiation/SensHeat.cpp \
 ../Radiation/SolveSurfaceFluxes.cpp \
@@ -21,7 +20,6 @@ OBJS += \
 ./Radiation/LatHeat.o \
 ./Radiation/MeltHeat.o \
 ./Radiation/NetRad.o \
-./Radiation/NetRad_water.o \
 ./Radiation/RainHeat.o \
 ./Radiation/SensHeat.o \
 ./Radiation/SolveSurfaceFluxes.o \
@@ -33,7 +31,6 @@ CPP_DEPS += \
 ./Radiation/LatHeat.d \
 ./Radiation/MeltHeat.d \
 ./Radiation/NetRad.d \
-./Radiation/NetRad_water.d \
 ./Radiation/RainHeat.d \
 ./Radiation/SensHeat.d \
 ./Radiation/SolveSurfaceFluxes.d \

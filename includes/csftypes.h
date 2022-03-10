@@ -81,6 +81,12 @@ typedef unsigned                                        char UINT1;
 typedef unsigned           short                        int  UINT2;
 typedef unsigned           CSF_4BYTE_INT_SIZE_SPECIFIER int  UINT4;
 
+#ifdef __GNUC__
+   typedef UINT4 __attribute__((__may_alias__)) UINT4_ALIASING;
+#else
+   typedef UINT4 UINT4_ALIASING;
+#endif 
+   
 #undef CSF_4BYTE_INT_SIZE_SPECIFIER
 #undef CSF_SIGNED_SPECIFIER
 
@@ -364,8 +370,8 @@ typedef enum CSF_CR {
 #  define IS_MV_REAL4(x) (((const UINT2 *)(x))[1] == MV_UINT2)
 #  define IS_MV_REAL8(x) (((const UINT2 *)(x))[3] == MV_UINT2)
 # else
-#  define IS_MV_REAL4(x) ((*((const CSF_IN_GLOBAL_NS UINT4 *)(x))) == MV_UINT4)
-#  define IS_MV_REAL8(x) (((const CSF_IN_GLOBAL_NS UINT4 *)(x))[1] == MV_UINT4)
+#  define IS_MV_REAL4(x) ((*((const CSF_IN_GLOBAL_NS UINT4_ALIASING *)(x))) == MV_UINT4)
+#  define IS_MV_REAL8(x) (((const CSF_IN_GLOBAL_NS UINT4_ALIASING *)(x))[1] == MV_UINT4)
 # endif
 #else
 # ifdef CPU_BIG_ENDIAN
@@ -394,13 +400,13 @@ typedef enum CSF_CR {
 #define SET_MV_INT1(x)	( (*(( INT1 *)(x))) = MV_INT1)
 #define SET_MV_INT2(x)	( (*(( INT2 *)(x))) = MV_INT2)
 #define SET_MV_INT4(x)	( (*(( INT4 *)(x))) = MV_INT4)
-#define	SET_MV_REAL4(x)	((*(CSF_IN_GLOBAL_NS UINT4 *)(x)) = MV_UINT4)
+#define	SET_MV_REAL4(x)	( (*((CSF_IN_GLOBAL_NS UINT4_ALIASING *)(x))) = MV_UINT4)
 #define	SET_MV_REAL8(x)	SET_MV_REAL4((x)),SET_MV_REAL4((((CSF_IN_GLOBAL_NS UINT4 *)(x))+1))
 
 /* copy of floats  by typecasting to
  * an integer since MV_REAL? is a NAN
  */
-#define	COPY_REAL4(dest,src) ( (*(UINT4 *)(dest)) = (*(const UINT4 *)(src)) )
+#define	COPY_REAL4(dest,src) ( (*(UINT4_ALIASING *)(dest)) = (*(const UINT4_ALIASING *)(src)) )
 #define	COPY_REAL8(dest,src) COPY_REAL4((dest),(src)),\
 		COPY_REAL4( (((UINT4 *)(dest))+1),(((const UINT4 *)(src))+1) )
 

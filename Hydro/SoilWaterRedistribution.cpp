@@ -36,11 +36,8 @@
 
 void Basin::SoilWaterRedistribution(Control &ctrl, const double &F, double &theta1,
 				    double &theta2, double &theta3, double &pond,
-				    double &gw, double &leak,  double dt,
-				    int r, int c) {
+				    double &gw, double dt, int r, int c) {
 
-
-  //double K1, K12, K2, K23, K3;
   double theta_r1 = _theta_rL1->matrix[r][c];
   double theta_r2 = _theta_rL2->matrix[r][c];
   double theta_r3 = _theta_rL3->matrix[r][c];
@@ -78,99 +75,79 @@ void Basin::SoilWaterRedistribution(Control &ctrl, const double &F, double &thet
   double a2 = dt*Ks2/(poros2-theta_r2);
   double a3 = dt*Ks3/(poros3-theta_r3);
 
-  // == Gravitational drainage -------------------------------------------------
-
-  // -- First layer 1 + updating the layer below
-  if(x[0]/d1 > thetafc1){
+  // ***************************************************************************
+  // == Gravitational drainage (downward)---------------------------------------
+  // ***************************************************************************
+  if(x[0]/d1 > thetafc1){				// -- First layer 1 + updating the layer below
     x[0] =( L1 + a1* theta_r1) / (1 + a1/d1);
-    //check if too much drainage
-    if(x[0]/d1 < thetafc1)
+    if(x[0]/d1 < thetafc1)      			//check if too much drainage
       x[0] = thetafc1 * d1;
-
     L2 += L1 - x[0];
-
-    // Tracking
-    _FluxPercolL2->matrix[r][c] += max<REAL8>(0,L1 - x[0]);
-    if(ctrl.sw_trck)
-      _FluxL1toL2->matrix[r][c] += max<REAL8>(0,L1 - x[0]);
-
     x[1]=L2;
   }
-
-  // -- Second layer + updating the layer below
-  if(L2/d2 > thetafc2){
+  if(L2/d2 > thetafc2){					// -- Second layer + updating the layer below
     x[1] =(L2 + a2* theta_r2) / (1 + a2/d2);
-    //check if too much drainage
-    if(x[1]/d2 < thetafc2)
+    if(x[1]/d2 < thetafc2) 				//check if too much drainage
       x[1] = thetafc2 * d2;
-
     L3 += L2 - x[1];
-
-    _FluxPercolL3->matrix[r][c] += max<REAL8>(0,L2 - x[1]);
-    // Tracking
-    if(ctrl.sw_trck)
-      _FluxL2toL3->matrix[r][c] += max<REAL8>(0,L2 - x[1]);
-
     x[2]=L3;
   }
-
-  // -- Third layer 
-  if(L3/d3 > thetafc3){
+  if(L3/d3 > thetafc3){ 	  		  	// -- Third layer 
     x[2] =(L3 + L*a3* theta_r3) / (1 + L*a3/d3);
     //check if too much drainage
     if(x[2]/d3 < thetafc3)
       x[2] = thetafc3 * d3;
-
   }
 
+  // ***************************************************************************
+  // == Tracking Gravitational drainage (downward)------------------------------
+  // ***************************************************************************
+  _FluxPercolL2->matrix[r][c] += max<REAL8>(0,L1 - x[0]); 			// [m]
+  _FluxPercolL3->matrix[r][c] += max<REAL8>(0,L2 - x[1]); 			// [m]
+  _BedrockLeakageFlux->matrix[r][c] = std::max<double>(0,(L3 - x[2])/dt);	// [m/s]
+  if(ctrl.sw_trck){
+    _FluxL1toL2->matrix[r][c] += max<REAL8>(0,L1 - x[0]); 			// [m]
+    _FluxL2toL3->matrix[r][c] += max<REAL8>(0,L2 - x[1]); 			// [m]
+    _FluxLeak->matrix[r][c] = (L3 - x[2]); 	 				// [m]
+  }
+
+  // ***************************************************************************
+  // == Check if over-filling (upward)------------------------------------------
+  // ***************************************************************************  
   theta1 = x[0]/d1;
   theta2 = x[1]/d2;
   theta3 = x[2]/d3;
 
-  // -- Check if it creates over-filling -> cascading adjustment
-  //pond -=F;
-  // -- L3
-  if(theta3 > poros3){
+  if(theta3 > poros3){ 					   // -- Third layer
     theta2 += (theta3 - poros3) * d3/d2;
-
-    // Tracking : remove the excess
-    _FluxPercolL3->matrix[r][c] -= (theta3 - poros3) * d3 ;
+    _FluxPercolL3->matrix[r][c] -= (theta3 - poros3) * d3; // [m]    Tracking
     if(ctrl.sw_trck)
-      _FluxL2toL3->matrix[r][c] -= (theta3 - poros3) * d3 ;
-
+      _FluxL2toL3->matrix[r][c] -= (theta3 - poros3) * d3; // [m]    Isotope tracking
     theta3 = poros3;
   }
-  // -- L2
-  if(theta2 > poros2){
+  if(theta2 > poros2){ 					   // -- Second layer
     theta1 += (theta2 - poros2) * d2/d1;
-
-    // Tracking
-    _FluxPercolL2->matrix[r][c] -= (theta2 - poros2) * d2;
+    _FluxPercolL2->matrix[r][c] -= (theta2 - poros2) * d2; // [m]    Tracking
     if(ctrl.sw_trck)
-      _FluxL1toL2->matrix[r][c] -= (theta2 - poros2) * d2;
-
+      _FluxL1toL2->matrix[r][c] -= (theta2 - poros2) * d2; // [m]    Isotope Tracking
     theta2 = poros2;
   }
-  // -- L1
-  if(theta1 > poros1){
+  if(theta1 > poros1){  				   // -- First layer
     pond += -(poros1 - theta1) * d1;
-
-    // Tracking
-    _FluxInfilt->matrix[r][c] -= (theta1 - poros1) * d1;
+    _FluxInfilt->matrix[r][c]  -= (theta1 - poros1) * d1 ; // [m]   Tracking
     if(ctrl.sw_trck)
-      _FluxSrftoL1->matrix[r][c] -= (theta1 - poros1) * d1;
-
+      _FluxSrftoL1->matrix[r][c]-= (theta1 - poros1) * d1; // [m]   Isotope Tracking
     theta1 = poros1;
   }
 
-  // -- Gravitational water (L3) and bedrock leakage
-  // (matrices are updated in SolveSurfaceFluxes.cpp)
+  // ***************************************************************************
+  // -- Gravitational water (L3) & update global objects-----------------------
+  // ***************************************************************************
   _FluxRecharge->matrix[r][c] += max<double>(0,max<double>(0,(theta3 - thetafc3) * d3) - gw);
   gw = max<double>(0,(theta3 - thetafc3) * d3);
-  leak = std::max<double>(0,(L3 - x[2])/dt);
-
-  if(ctrl.sw_trck)
-    _FluxLeak->matrix[r][c] = (L3 - x[2]);
+  _ponding->matrix[r][c] = pond;                       			        // [m]
+  _GravityWater->matrix[r][c] = gw;                       			// [m]
+  _GrndWater->matrix[r][c] = gw;                          			// [m]
 
 }
 

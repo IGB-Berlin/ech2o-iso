@@ -30,27 +30,30 @@
 
 #include "Budget.h"
 
-void Budget::TotalTranspiration(const grid* map, const Basin *b)
+void Budget::TotalTranspiration(const grid* map1, const grid* map2, const Basin *b)
 {
-  transpiration += AccountFluxes(map, b);
+  transpiration += AccountFluxes(map1, map2, b);
 }
 
-void Budget::TotalTranspiration_d2H(const grid* map1, const grid* map2, const Basin *b)
+void Budget::TotalTranspiration_d2H(const grid* map1, const grid* map2,
+				    const grid* map3, const Basin *b)
 {
-  transpiration_d2H += AccountTrckFluxes(map1, map2, b);
+  transpiration_d2H += AccountTrckFluxes(map1, map2, map3, b);
   //transpiration_d2H = AccountTrckFluxes(map1, map2, b);
 }
 
-void Budget::TotalTranspiration_d18O(const grid* map1, const grid* map2, const Basin *b)
+void Budget::TotalTranspiration_d18O(const grid* map1, const grid* map2,
+				     const grid* map3, const Basin *b)
 {
-  transpiration_d18O += AccountTrckFluxes(map1, map2, b);
+  transpiration_d18O += AccountTrckFluxes(map1, map2, map3, b);
   //transpiration_d18O = AccountTrckFluxes(map1, map2, b);
 }
 
 // the water that already left is kept in the balance and "aging" as well
-void Budget::TotalTranspiration_Age(const grid* map1, const grid* map2, const Basin *b)
+void Budget::TotalTranspiration_Age(const grid* map1, const grid* map2,
+				    const grid* map3, const Basin *b)
 {
-  transpiration_Age += transpiration * dt / 86400 + AccountTrckFluxes(map1, map2, b);
+  transpiration_Age += transpiration * dt / 86400 + AccountTrckFluxes(map1, map2, map3, b);
   //transpiration_Age = AccountTrckFluxes(map1, map2, b);
 }
 

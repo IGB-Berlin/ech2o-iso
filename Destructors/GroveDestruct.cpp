@@ -64,6 +64,12 @@ Grove::~Grove(){
 		delete _Del_RootMass;
 	if(_Temp_c)
 		delete _Temp_c;
+        if(_RUptakeL1)
+		delete _RUptakeL1;
+	if(_RUptakeL2)
+		delete _RUptakeL2;
+	if(_RUptakeL3)
+		delete _RUptakeL3;	
 	if(_NetR_Can)
 		delete _NetR_Can;
 	if(_LatHeat_CanE)
@@ -82,8 +88,12 @@ Grove::~Grove(){
 		delete _Einterception;
 	if(_Esoil)
 			delete _Esoil;
+	if(_SoilWatPot)
+		delete _SoilWatPot;	
 	if(_LeafWatPot)
 		delete _LeafWatPot;
+	if(_SapVelocity)
+	  delete _SapVelocity;
 	if(_rootfrac1)
 		delete _rootfrac1;
 	if(_rootfrac2)
@@ -96,6 +106,13 @@ Grove::~Grove(){
 		delete _d18Ocanopy;
 	if(_Agecanopy)
 		delete _Agecanopy;
+
+	if(_d2Hthroughfall)
+		delete _d2Hthroughfall;
+	if(_d18Othroughfall)
+		delete _d18Othroughfall;
+	if(_Agethroughfall)
+		delete _Agethroughfall;
 
 	if(_d2HevapT)
 		delete _d2HevapT;

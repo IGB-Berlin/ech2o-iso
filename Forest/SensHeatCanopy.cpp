@@ -35,10 +35,10 @@ double Forest::SensHeatCanopy(Atmosphere &atm, double ra, const double &Ts, int 
 	double airdens = 0; //density of air in kgm-3
 	double Ta = 0; //temperature of air
 
-					airdens = AirDensity(atm.getTemperature()->matrix[row][col]); //kgm-3
-					Ta = atm.getTemperature()->matrix[row][col];
+	airdens = AirDensity(atm.getTemperature()->matrix[row][col],atm.getPressure()->matrix[row][col]); //kgm-3
+	Ta = atm.getTemperature()->matrix[row][col];
 
-					return
-							(1/(ra)) * airdens * spec_heat_air *(Ta - Ts);
+	return
+		(1/(ra)) * airdens * spec_heat_air *(Ta - Ts);
 
 }

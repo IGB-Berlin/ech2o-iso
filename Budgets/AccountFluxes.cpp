@@ -29,7 +29,7 @@
  */
 #include "Budget.h"
 
-double Budget::AccountFluxes(const grid *map, const Basin *b) {
+double Budget::AccountFluxes(const grid *map1, const grid *map2, const Basin *b) {
 
   UINT4 length = b->getSortedGrid().cells.size();
   UINT4 r, c;
@@ -45,13 +45,14 @@ double Budget::AccountFluxes(const grid *map, const Basin *b) {
     r = b->getSortedGrid().cells[i].row;
     c = b->getSortedGrid().cells[i].col;
 
-    result += (map->matrix[r][c] * dx * dx * dt);
+    result += (map1->matrix[r][c] * dx * dx * dt * map2->matrix[r][c]);
+    //map2 is the proportion of cell within the catchment
   }
 
   return result;
 }
 
-double Budget::AccountFluxes(const grid *map, const Atmosphere *b) {
+double Budget::AccountFluxes(const grid *map1, const grid *map2, const Atmosphere *b) {
 
   UINT4 zones = b->getSortedGrid().size();
   UINT4 r, c;
@@ -68,7 +69,8 @@ double Budget::AccountFluxes(const grid *map, const Atmosphere *b) {
       r = b->getSortedGrid()[i].cells[j].row;
       c = b->getSortedGrid()[i].cells[j].col;
 
-      result += (map->matrix[r][c] * dx * dx * dt);
+      result += (map1->matrix[r][c] * dx * dx * dt * map2->matrix[r][c]);
+      //map2 is the proportion of cell within the catchment
     }
 
   return result;
@@ -93,7 +95,7 @@ double Budget::AccountFluxes(const vectCells *timeseries, const Basin *b) {
 
 // --- Tracking : uses two maps (or vectors) to multiply -----------------------------------
 
-double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Basin *b) {
+double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const grid *map3, const Basin *b) {
   
   UINT4 length = b->getSortedGrid().cells.size();
   UINT4 r, c;
@@ -109,15 +111,16 @@ double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Basin
     r = b->getSortedGrid().cells[i].row;
     c = b->getSortedGrid().cells[i].col;
     
-    result +=  (map1->matrix[r][c] * map2->matrix[r][c] *dx*dx*dt);
-    
+    result +=  (map1->matrix[r][c] * map2->matrix[r][c] *dx*dx*dt*map3->matrix[r][c]);
+    //map3 is the proportion of cell within the catchment
   }
   
   return result;
 }
 
 // Precip isotopes
-double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Atmosphere *a) {
+//map3:ttarea
+double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const grid *map3, const Atmosphere *a) {
   
   UINT4 zones = a->getSortedGrid().size();
   UINT4 r, c;
@@ -134,14 +137,15 @@ double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Atmos
       r = a->getSortedGrid()[i].cells[j].row;
       c = a->getSortedGrid()[i].cells[j].col;
       
-      result += (map1->matrix[r][c] * map2->matrix[r][c] * dx * dx * dt);
+      result += (map1->matrix[r][c] * map2->matrix[r][c] * dx * dx * dt * map3->matrix[r][c]);
     }
   
   return result;
 }
 
 // Precip age: it's 0 at entry, but the budgets must account for aging previously-input precip!
-double Budget::AccountTrckFluxes(const grid *map, const Atmosphere *a){
+//map2 = ttarea
+double Budget::AccountTrckFluxes(const grid *map1, const grid *map2, const Atmosphere *a){
   
   UINT4 zones = a->getSortedGrid().size();
   UINT4 r, c;
@@ -158,7 +162,7 @@ double Budget::AccountTrckFluxes(const grid *map, const Atmosphere *a){
       r = a->getSortedGrid()[i].cells[j].row;
       c = a->getSortedGrid()[i].cells[j].col;
       
-      result += map->matrix[r][c] * dx * dx * dt * dt / 86400; 
+      result += map1->matrix[r][c] * map2->matrix[r][c]* dx * dx * dt * dt / 86400; 
     }
   
   return result;
@@ -274,6 +278,7 @@ double Budget::AccountTrckOut(const grid* evapS, const grid* CevapS,
 			      const grid* leakage, const grid* Cleakage,
 			      const vectCells *OvlndOut, const vectCells *COvlndOut,
 			      const vectCells *GWOut, const vectCells *CGWOut,
+                              const grid* ttarea,
 			      const Basin *b)
 {
   
@@ -300,10 +305,10 @@ double Budget::AccountTrckOut(const grid* evapS, const grid* CevapS,
       numer1 += (evapS->matrix[r][c]* CevapS->matrix[r][c] +
 		 evapI->matrix[r][c]* CevapI->matrix[r][c] +
 		 evapT->matrix[r][c]* CevapT->matrix[r][c] +
-		 leakage->matrix[r][c]* Cleakage->matrix[r][c]) *dx*dx;
+		 leakage->matrix[r][c]* Cleakage->matrix[r][c]) *dx*dx * ttarea->matrix[r][c];
       
       denom1 += (evapS->matrix[r][c] + evapI->matrix[r][c] + evapT->matrix[r][c] +
-		 leakage->matrix[r][c]) *dx*dx;
+		 leakage->matrix[r][c]) *dx*dx  * ttarea->matrix[r][c];
     }
  
     //cout << numer1 << " " << denom1 << endl;

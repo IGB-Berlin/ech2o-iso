@@ -34,7 +34,7 @@ int Atmosphere::AdjustPrecip(){
 
 	UINT4 r, c;
 
-
+      #pragma omp parallel for default(none) private(r,c) 
 	for(UINT4 i = 0; i < _vSortedGrid.size(); i++)
 		for (UINT4 j = 0; j < _vSortedGrid[i].cells.size() ; j++)
 		{

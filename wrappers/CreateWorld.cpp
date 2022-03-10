@@ -37,16 +37,19 @@ int CreateWorld(char* argv[]){
   oControl->ReadConfigFile(argv[1]);
   cout << "Config.ini read ok... " << "\n";
 
-  oBasin = new Basin(*oControl);
-  cout << "Basin created ok... " << "\n";
-
+  if(oControl->toggle_hydrologic_engine>0 and oControl->sw_trck)
+    throw std::ios::failure("Error: Richard's not available with Tracking right now\n");
+  
   oAtmosphere = new Atmosphere(*oControl);
   cout << "Atmosphere created ok... " << "\n";
+  
+  oBasin = new Basin(*oControl, *oAtmosphere);
+  cout << "Basin created ok... " << "\n";
 
   oReport = new Report(*oControl);
   cout << "Report created ok... " << "\n";
 
-  oTracking = new Tracking(*oControl, *oBasin);
+  oTracking = new Tracking(*oControl, *oBasin, *oAtmosphere);
   if(oControl->sw_trck)
     cout << "Isotope module created ok... " << "\n";
 
@@ -65,27 +68,39 @@ int CreateWorld(char* argv[]){
     throw;
   }
   // Headers for BasinSummary
-  ofSummary << "Precip\t";
-  ofSummary << "SWE\t";
-  ofSummary << "Canopy\t";
-  ofSummary << "Surface\t";
-  ofSummary << "Channel\t";
-  ofSummary << "SoilW\t";
-  ofSummary << "SoilL1\t";
-  ofSummary << "SoilL2\t";
-  ofSummary << "SoilL3\t";
-  ofSummary << "RZW\t";
-  ofSummary << "GW\t";
-  ofSummary << "ET\t";
-  ofSummary << "EvapS\t";
-  ofSummary << "EvapC\t";
-  ofSummary << "EvapI\t";
-  ofSummary << "EvapT\t";
-  ofSummary << "Leakage\t";
-  ofSummary << "SrfOut\t";
-  ofSummary << "GWOut\t";
+  ofSummary << "Precip(m3)\t";
+  ofSummary << "SWE(m3)\t";
+  if(oControl->sw_BC){
+    ofSummary << "BCSurf(m3)\t";
+    ofSummary << "BCGW(m3)\t";
+    if(oControl->sw_deepGW)
+      ofSummary << "DeepBCGW(m3)\t";
+  }
+  ofSummary << "Canopy(m3)\t";
+  ofSummary << "Surface(m3)\t";
+  ofSummary << "Channel(m3)\t";
+  ofSummary << "SoilW(m3)\t";
+  ofSummary << "SoilL1(m3)\t";
+  ofSummary << "SoilL2(m3)\t";
+  ofSummary << "SoilL3(m3)\t";
+  ofSummary << "RZW(m3)\t";
+  ofSummary << "GW(m3)\t";
+  ofSummary << "ET(m3)\t";
+  ofSummary << "EvapS(m3)\t";
+  ofSummary << "EvapC(m3)\t";  
+  ofSummary << "EvapI(m3)\t";
+  ofSummary << "EvapT(m3)\t";
+  ofSummary << "Leakage(m3)\t";
+  if(oControl->sw_deepGW)  
+    ofSummary << "DeepGW(m3)\t";
+  ofSummary << "SrfOut(m3)\t";
+  ofSummary << "GWOut(m3)\t";
+  if(oControl->sw_deepGW)    
+    ofSummary << "DeepGWOut(m3)\t";  
   ofSummary << "SrftoCh\t";
   ofSummary << "GWtoCh\t";
+  if(oControl->sw_deepGW)    
+    ofSummary << "DeepGWtoCh\t";  
   ofSummary << "Rchrge\t";
   ofSummary << "SatExt\t";
   ofSummary << "MBErr";

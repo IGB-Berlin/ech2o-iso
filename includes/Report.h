@@ -52,6 +52,7 @@ struct Report{
 	int ReportTimeSeries(const grid *input, string filename, float timestep);
 	int ReportVectCells(const vectCells *input, string filename, float timestep);
 	int RenameFile(string oldname);
-
+	int UpdateOutputNC(const grid *input, string varname, string outTP);
+	int CreatOutputNC(string filepath, string outTP);
 };
 #endif /* REPORT_H_ */

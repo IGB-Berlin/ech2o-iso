@@ -38,10 +38,11 @@
 #include "Grove.h"
 #include "Atmosphere.h"
 #include "Basin.h"
-
+#include "Tracking.h"
 
 using namespace std;
 class Basin;
+class Tracking;
 class Forest {
 
   UINT4 _NRows;
@@ -63,12 +64,10 @@ class Forest {
 
   // For LAI input ----------------------------------------------
   UINT4 InitiateLAIMap(ifstream & ifHandle, grid & ClimMap);
-  // internal function that updates a LAI map
-  int UpdateLAIMap(ifstream & ifHandle, grid & ClimMap);
-  // LAI data file handles
-  ifstream ifLAI;
+  int UpdateLAIMap(ifstream & ifHandle, grid & ClimMap);	  // internal function that updates a LAI map
+  ifstream ifLAI; 						  // LAI data file handles
+  ifstream ifhgt; 						  // hgt data file handles  
   // -------------------------------------------------------------
-  
 
   /*State variables*/
 
@@ -90,19 +89,19 @@ class Forest {
   Forest(Control &ctrl);
   ~Forest();
 
-  int CalculateCanopyConduct(const Basin &bas, const Atmosphere &atm, const Control &ctrl, const double &lwp, double &dgsdlwp, UINT4 j, UINT4 r, UINT4 c);
+  int CalculateCanopyConduct(const Basin &bas, const Atmosphere &atm, const Control &ctrl, const double &lwp,const double &lwp_max,
+			     const double &lwp_min, double &dgsdlwp, UINT4 j, UINT4 r, UINT4 c);
 
   UINT4 SolveCanopyEnergyBalance(Basin &bas, Atmosphere &atm, Control &ctrl,
 				 REAL8 theta_r1, REAL8 theta_r2, REAL8 theta_r3,
-				 REAL8 rootdepth, 
-				 REAL8 psiae, REAL8 bclambda, REAL8 ra, 
+				 REAL8 rootdepth,  REAL8 psiae, REAL8 bclambda, REAL8 ra, 
 				 REAL8 &DelCanStor, REAL8 &evap_a, REAL8 &transp_a, REAL8 &netR_a, REAL8 &leR_a,
-				 UINT4 s, UINT4 r, UINT4 c);
+				 REAL8 &h_a, UINT4 s, UINT4 r, UINT4 c);
   int CanopyInterception(Atmosphere &atm, Control &ctrl, REAL8 &DelCanStor, REAL8 &D, UINT4 s, UINT4 r, UINT4 c);
   int GrowForest(Basin &bas, const Atmosphere &atm, const Control &ctrl);
-  int SperryModel(Basin &bas, Atmosphere &atm, Control &ctrl, REAL8 rootdepth,REAL8 Sold, REAL8 psiae, REAL8 bclambda, REAL8 airTp,
-		  REAL8 airRH, REAL8 rho_a, REAL8 gamma, REAL8 ra, REAL8 poros, REAL8 thetawp, REAL8 evap_a,REAL8 fA, REAL8 fB, 
-		  REAL8 fC, REAL8 leavesurfRH, REAL8 leafRH,REAL8 &LET, REAL8 &LE, REAL8 &H,REAL8 &temp1,REAL8 &temp2, UINT4 s, 
+  int SperryModel(Basin &bas, Atmosphere &atm, Control &ctrl, REAL8 rootdepth,REAL8 Sold, REAL8 Keff, REAL8 psiae, REAL8 bclambda, REAL8 airTp,
+		  REAL8 airRH, REAL8 rho_a, REAL8 gamma, REAL8 ra, REAL8 poros, REAL8 thetar, REAL8 thetawp, REAL8 evap_a,REAL8 fA, REAL8 fB, 
+		  REAL8 fC, REAL8 leavesurfRH, REAL8 leafRH,REAL8 &LET, REAL8 &LE, REAL8 &H,REAL8 &temp0,REAL8 &temp1,REAL8 &temp2, REAL8 &temp3, UINT4 s, 
 		  UINT4 r, UINT4 c);
 
   // Convert grid from isotopic ratios to isotopic deltas
@@ -117,6 +116,10 @@ class Forest {
     return _species[n]._fraction->matrix[row][col];
   }
 
+  REAL8 getVegSpeciesType(UINT4 n) const {
+    return _species[n].vegtype;
+  }
+
   REAL8 getLAISpecies(UINT4 n, UINT4 row, UINT4 col) const {
     return _species[n]._LAI->matrix[row][col];
   }
@@ -124,6 +127,10 @@ class Forest {
   REAL8 getMaxCanopyStorage(UINT4 n, UINT4 row, UINT4 col) const {
     Grove *spe = &_species[n]; //ACHTUNG ACHTUNG! MEMORY LEAK??!?!?!
     return spe->MaxCanStorageParamt * spe->_LAI->matrix[row][col];
+  }
+
+  REAL8 getThroughfallCoeff(UINT4 n) const {
+    return _species[n].Throughfall_coeff;
   }
 
   REAL8 getCanopyConductance(UINT4 n, UINT4 row, UINT4 col) const {
@@ -138,6 +145,20 @@ class Forest {
   REAL8 getCanopyTemp(UINT4 n, UINT4 row, UINT4 col) const {
     Grove *spe = &_species[n]; //ACHTUNG ACHTUNG! MEMORY LEAK??!?!?!
     return spe->_Temp_c->matrix[row][col];
+  }
+  REAL8 getRootUptakeL1(UINT4 n, UINT4 row, UINT4 col) const {
+    Grove *spe = &_species[n];
+    return spe->_RUptakeL1->matrix[row][col];
+  }
+
+  REAL8 getRootUptakeL2(UINT4 n, UINT4 row, UINT4 col) const {
+    Grove *spe = &_species[n];
+    return spe->_RUptakeL2->matrix[row][col];
+  }
+
+  REAL8 getRootUptakeL3(UINT4 n, UINT4 row, UINT4 col) const {
+    Grove *spe = &_species[n];
+    return spe->_RUptakeL3->matrix[row][col];
   }
   REAL8 getCanopyNetRad(UINT4 n, UINT4 row, UINT4 col) const {
     Grove *spe = &_species[n]; //ACHTUNG ACHTUNG! MEMORY LEAK??!?!?!
@@ -159,8 +180,6 @@ class Forest {
   }
 
   REAL8 getIntercWater(UINT4 n, UINT4 row, UINT4 col) const {
-    //Grove *spe = &_species[n]; //ACHTUNG ACHTUNG! MEMORY LEAK??!?!?!
-    //return spe->_WaterStorage->matrix[row][col];
     return _species[n]._WaterStorage->matrix[row][col];
   }
 
@@ -174,6 +193,10 @@ class Forest {
 
   REAL8 getWiltPoint(UINT4 n) const {
     return _species[n].WiltingPoint;
+  }
+
+  REAL8 getRootAspect(UINT4 n) const {
+    return _species[n].Aroot;
   }
 
   REAL8 getSperry_d(UINT4 n, UINT4 row, UINT4 col) const {
@@ -202,12 +225,18 @@ class Forest {
   REAL8 getTranspiration(UINT4 n, UINT4 row, UINT4 col) const {
     return _species[n]._Transpiration->matrix[row][col];
   }
+  REAL8 getTranspirationFlux(UINT4 n, UINT4 row, UINT4 col) const {
+    return _species[n]._TranspirationFlux->matrix[row][col];
+  }
   REAL8 getEsoil(UINT4 n, UINT4 row, UINT4 col) const {
     return _species[n]._Esoil->matrix[row][col];
   }
   REAL8 getLeafWaterPotential(UINT4 n, UINT4 row, UINT4 col) const {
     return _species[n]._LeafWatPot->matrix[row][col];
   }
+  REAL8 getSoilWaterPotential(UINT4 n, UINT4 row, UINT4 col) const {
+    return _species[n]._SoilWatPot->matrix[row][col];
+  }  
   grid *getRootFrac1(UINT4 n) const {
     return _species[n]._rootfrac1;
   }
@@ -240,7 +269,7 @@ class Forest {
     return _species[n]._GPP;
   }
 
-  grid *getNPPSpeciesMap(UINT4 n) const {
+   grid *getNPPSpeciesMap(UINT4 n) const {
     return _species[n]._NPP;
   }
 
@@ -260,6 +289,18 @@ class Forest {
     return _species[n]._Temp_c;
   }
 
+  grid *getRootUptakeL1Map(UINT4 n) const {
+    return _species[n]._RUptakeL1;
+  }
+
+  grid *getRootUptakeL2Map(UINT4 n) const {
+    return _species[n]._RUptakeL2;
+  }
+
+  grid *getRootUptakeL3Map(UINT4 n) const {
+    return _species[n]._RUptakeL3;
+  }
+  
   grid *getCanopyNetRadSpeciesMap(UINT4 n) const {
     return _species[n]._NetR_Can;
   }
@@ -288,12 +329,23 @@ class Forest {
   grid *getTranspirationSpeciesMap(UINT4 n) const {
     return _species[n]._Transpiration;
   }
+  grid *getTranspirationFluxSpeciesMap(UINT4 n) const {
+    return _species[n]._TranspirationFlux;
+  }
   grid *getEsoilSpeciesMap(UINT4 n) const {
     return _species[n]._Esoil;
   }
+
+  grid *getSoilWaterPotSpeciesMap(UINT4 n) const {
+    return _species[n]._SoilWatPot;
+  }
+  
   grid *getLeafWaterPotSpeciesMap(UINT4 n) const {
     return _species[n]._LeafWatPot;
   }
+  grid *getSapVelocitySpeciesMap(UINT4 n) const {
+    return _species[n]._SapVelocity;
+  }  
 
   // setters
   void setEsoilSpecies(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
@@ -301,6 +353,9 @@ class Forest {
   }
   void setETSpecies(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
     _species[n]._ET->matrix[row][col] = value;
+  }
+  void setTranspirationFlow(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
+    _species[n]._TranspirationFlux->matrix[row][col] = value;
   }
   void setRootFrac1Species(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
     _species[n]._rootfrac1->matrix[row][col] = value;
@@ -314,6 +369,9 @@ class Forest {
   grid *getd2Hcanopy(UINT4 n) const {
     return _species[n]._d2Hcanopy;
   }
+  grid *getd2Hthroughfall(UINT4 n) const {
+    return _species[n]._d2Hthroughfall;
+  }  
   grid *getd2HevapT(UINT4 n) const {
     return _species[n]._d2HevapT;
   }
@@ -323,10 +381,19 @@ class Forest {
   grid *getd2HevapS(UINT4 n) const {
     return _species[n]._d2HevapS;
   }
-
+  grid *getd2HevapT_Vap(UINT4 n) const {
+    return _species[n]._d2HevapT_Vap;
+  }
+  grid *getd2HevapI_Vap(UINT4 n) const {
+    return _species[n]._d2HevapI_Vap;
+  }
+  
   grid *getd18Ocanopy(UINT4 n) const {
     return _species[n]._d18Ocanopy;
   }
+  grid *getd18Othroughfall(UINT4 n) const {
+    return _species[n]._d18Othroughfall;
+  }  
   grid *getd18OevapT(UINT4 n) const {
     return _species[n]._d18OevapT;
   }
@@ -336,10 +403,19 @@ class Forest {
   grid *getd18OevapS(UINT4 n) const {
     return _species[n]._d18OevapS;
   }
-    
+  grid *getd18OevapT_Vap(UINT4 n) const {
+    return _species[n]._d18OevapT_Vap;
+  }
+  grid *getd18OevapI_Vap(UINT4 n) const {
+    return _species[n]._d18OevapI_Vap;
+  }
+  
   grid *getAgecanopy(UINT4 n) const {
     return _species[n]._Agecanopy;
   }
+  grid *getAgethroughfall(UINT4 n) const {
+    return _species[n]._Agethroughfall;
+  }  
   grid *getAgeevapS(UINT4 n) const {
     return _species[n]._AgeevapS;
   }
@@ -354,6 +430,9 @@ class Forest {
   void setd2Hcanopy(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
     _species[n]._d2Hcanopy->matrix[row][col] = value;
   }
+  void setd2Hthroughfall(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
+    _species[n]._d2Hthroughfall->matrix[row][col] = value;
+  }  
   void setd2HevapS(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
     _species[n]._d2HevapS->matrix[row][col] = value;
   }
@@ -363,10 +442,19 @@ class Forest {
   void setd2HevapT(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
     _species[n]._d2HevapT->matrix[row][col] = value;
   }
-
+  void setd2HevapI_Vap(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
+    _species[n]._d2HevapI_Vap->matrix[row][col] = value;
+  }
+  void setd2HevapT_Vap(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
+    _species[n]._d2HevapT_Vap->matrix[row][col] = value;
+  }  
+  
   void setd18Ocanopy(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
     _species[n]._d18Ocanopy->matrix[row][col] = value;
   }
+  void setd18Othroughfall(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
+    _species[n]._d18Othroughfall->matrix[row][col] = value;
+  }  
   void setd18OevapS(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
     _species[n]._d18OevapS->matrix[row][col] = value;
   }
@@ -376,9 +464,18 @@ class Forest {
   void setd18OevapT(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
     _species[n]._d18OevapT->matrix[row][col] = value;
   }
-
+  void setd18OevapI_Vap(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
+    _species[n]._d18OevapI_Vap->matrix[row][col] = value;
+  } 
+  void setd18OevapT_Vap(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
+    _species[n]._d18OevapT_Vap->matrix[row][col] = value;
+  }
+  
   void setAgecanopy(UINT4 n, UINT4 row, UINT4 col, REAL8 value) { 
     _species[n]._Agecanopy->matrix[row][col] = value;
+  }
+  void setAgethroughfall(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
+    _species[n]._Agethroughfall->matrix[row][col] = value;
   }
   void setAgeevapS(UINT4 n, UINT4 row, UINT4 col, REAL8 value) {
     _species[n]._AgeevapS->matrix[row][col] = value;
@@ -393,10 +490,6 @@ class Forest {
   //external interface that updates all LAI maps by calling UpdateLAIMap
   int AdvanceLAIMaps(); 
   
-  /*  //setters
-      void setEvapoTransp(REAL8 ET, UINT4 n, UINT4 row, UINT4 col){
-      _species[n]._ET->matrix[row][col] = ET;
-      }*/
 };
 
 #endif /* FOREST_H_ */

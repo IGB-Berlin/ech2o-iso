@@ -8,6 +8,7 @@ CPP_SRCS += \
 ../wrappers/CreateWorld.cpp \
 ../wrappers/CrunchWorld.cpp \
 ../wrappers/Report2maps.cpp \
+../wrappers/Report2nc.cpp \
 ../wrappers/Report2screen.cpp \
 ../wrappers/SolveTimeStep.cpp \
 ../wrappers/Splash.cpp \
@@ -18,6 +19,7 @@ OBJS += \
 ./wrappers/CreateWorld.o \
 ./wrappers/CrunchWorld.o \
 ./wrappers/Report2maps.o \
+./wrappers/Report2nc.o \
 ./wrappers/Report2screen.o \
 ./wrappers/SolveTimeStep.o \
 ./wrappers/Splash.o \
@@ -28,6 +30,7 @@ CPP_DEPS += \
 ./wrappers/CreateWorld.d \
 ./wrappers/CrunchWorld.d \
 ./wrappers/Report2maps.d \
+./wrappers/Report2nc.d \
 ./wrappers/Report2screen.d \
 ./wrappers/SolveTimeStep.d \
 ./wrappers/Splash.d \

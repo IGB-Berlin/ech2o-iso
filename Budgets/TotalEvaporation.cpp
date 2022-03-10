@@ -30,9 +30,9 @@
 
 #include "Budget.h"
 
-void Budget::TotalEvaporation(const grid* map, const Basin *b)
+void Budget::TotalEvaporation(const grid* map1, const grid* map2, const Basin *b)
 {
-	evaporation += AccountFluxes(map, b);
+        evaporation += AccountFluxes(map1, map2, b);
 }
 
 // For Basind2HSummary.txt --------------------------------------------------------------
@@ -42,10 +42,11 @@ void Budget::InstOut_d2H(const grid* evapS, const grid* CevapS,
 			 const grid* leakage, const grid* Cleakage,
 			 const vectCells *OvlndOut, const vectCells *COvlndOut,
 			 const vectCells *GWOut, const vectCells *CGWOut,
+			 const grid* ttarea,			 
 			 const Basin *b)
 {
   d2HOut = AccountTrckOut(evapS, CevapS,evapI, CevapI, evapT, CevapT,
-			  leakage, Cleakage, OvlndOut, COvlndOut, GWOut, CGWOut, b);
+			  leakage, Cleakage, OvlndOut, COvlndOut, GWOut, CGWOut, ttarea, b);
 }
 
 void Budget::InstEvaporation_d2H(const grid* evapS, const grid* CevapS,
@@ -63,10 +64,11 @@ void Budget::InstOut_d18O(const grid* evapS, const grid* CevapS,
 			 const grid* leakage, const grid* Cleakage,
 			 const vectCells *OvlndOut, const vectCells *COvlndOut,
 			 const vectCells *GWOut, const vectCells *CGWOut,
+			 const grid* ttarea,			  
 			 const Basin *b)
 {
   d18OOut = AccountTrckOut(evapS, CevapS,evapI, CevapI, evapT, CevapT,
-			  leakage, Cleakage, OvlndOut, COvlndOut, GWOut, CGWOut, b);
+			   leakage, Cleakage, OvlndOut, COvlndOut, GWOut, CGWOut, ttarea, b);
 }
 
 void Budget::InstEvaporation_d18O(const grid* evapS, const grid* CevapS,
@@ -84,11 +86,12 @@ void Budget::InstOut_Age(const grid* evapS, const grid* CevapS,
 			 const grid* leakage, const grid* Cleakage,
 			 const vectCells *OvlndOut, const vectCells *COvlndOut,
 			 const vectCells *GWOut, const vectCells *CGWOut,
+			 const grid* ttarea,			 
 			 const Basin *b)
 {
   // In days
   AgeOut = AccountTrckOut(evapS, CevapS,evapI, CevapI, evapT, CevapT,
-			  leakage, Cleakage, OvlndOut, COvlndOut, GWOut, CGWOut, b);
+			  leakage, Cleakage, OvlndOut, COvlndOut, GWOut, CGWOut, ttarea, b);
 }
 
 void Budget::InstEvaporation_Age(const grid* evapS, const grid* CevapS,

@@ -38,13 +38,12 @@ double Forest::LatHeatCanopy(Basin &bas, Atmosphere &atm, double soilrelhumid, d
 	double gamma = 0;
 	double z = 0;
 
-					airdens = AirDensity(atm.getTemperature()->matrix[row][col]); //kgm-3
-					es = SatVaporPressure(Ts) * soilrelhumid; //saturated vapor pressure at temp Ts in Pa
-					ea = SatVaporPressure(atm.getTemperature()->matrix[row][col]) * atm.getRelativeHumidty()->matrix[row][col]; //vapor pressure at air temp in Pa
-					z = bas.getDEM()->matrix[row][col];
-					gamma = PsychrometricConst(101325,z); // replace with Pressure when implemented
-
-					return
-							(1/(ra * gamma)) * airdens * spec_heat_air *(ea - es);
+	airdens = AirDensity(atm.getTemperature()->matrix[row][col],atm.getPressure()->matrix[row][col]);
+	es = SatVaporPressure(Ts) * soilrelhumid; //saturated vapor pressure at temp Ts in Pa
+	ea = SatVaporPressure(atm.getTemperature()->matrix[row][col]) * atm.getRelativeHumidty()->matrix[row][col]; //vapor pressure at air temp in Pa
+	z = bas.getDEM()->matrix[row][col];
+	gamma = PsychrometricConst(atm.getPressure()->matrix[row][col],z); 
+	return
+		(1/(ra * gamma)) * airdens * spec_heat_air *(ea - es);
 
 }

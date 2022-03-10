@@ -37,14 +37,6 @@ void Tracking::MixingV_snow(Atmosphere &atm, Basin &bsn, Control &ctrl,
   double h_eff; // Effective SWE used for mixing
   double snow_in = bsn.getFluxCnptoSnow()->matrix[r][c];
 
-  //  double d2Hmelt = 0;
-  //  double d18Omelt = 0;
-  //  double Agemelt = 0;
-
-  //  double d2Hpack = 0;
-  //  double d18Opack = 0;
-  //  double Agepack = 0;
-
   // - in snowpack (snowfall in + snowmelt out), 
   // considering that snowmelt "flushes" the most recent snowfall first, without mixing
   if(abs(h) < RNDOFFERR){
@@ -56,78 +48,83 @@ void Tracking::MixingV_snow(Atmosphere &atm, Basin &bsn, Control &ctrl,
       _Agesnowpack->matrix[r][c] = 0.0;
   }
 
+  //dh      is melt
+  //snow_in is throughfall
+  //h0      is initial snow
+  //h       is snow after throughfall (h0 + snow_in)
+  
   // Case where there is more snowfall than snowmelt: 
   // snowpack mixed, snowmelt has snowfall signature
   // includes checks for where there is no previous snowpack
-  if(h > RNDOFFERR and snow_in > dh){
-    cout << "Snow exists and snowin is greater than melt" << endl;
+
+  //------------------------------------------------------------------------------------------------
+  // No initial snow - no need to mix
+  //------------------------------------------------------------------------------------------------  
+  if(h0 < RNDOFFERR){ //No initial snow
+    if(ctrl.sw_2H){
+      _d2Hsnowpack->matrix[r][c] = getd2Hthroughfall_sum()->matrix[r][c]; // if there was no previous snow
+      _d2Hsnowmelt->matrix[r][c] = getd2Hthroughfall_sum()->matrix[r][c];	
+    }
+    if(ctrl.sw_18O){
+      _d18Osnowpack->matrix[r][c] = getd18Othroughfall_sum()->matrix[r][c]; // if there was no previous snow
+      _d18Osnowmelt->matrix[r][c] = getd18Othroughfall_sum()->matrix[r][c];	
+    }
+    if(ctrl.sw_Age){
+      _Agesnowpack->matrix[r][c] = getAgethroughfall_sum()->matrix[r][c]; // if there was no previous snow
+      _Agesnowmelt->matrix[r][c] = getAgethroughfall_sum()->matrix[r][c];	
+    }
+
+  //------------------------------------------------------------------------------------------------
+  // Snow remains (more snow than melt) after the time-step with snow before time-step
+  //------------------------------------------------------------------------------------------------      
+  } else if(snow_in > dh){         
     h_eff = snow_in - dh;
 
     if(ctrl.sw_2H){
-      if(h0 < RNDOFFERR){
-	_d2Hsnowpack->matrix[r][c] = atm.getd2Hprecip()->matrix[r][c]; // if there was no previous snow
-	_d2Hsnowmelt->matrix[r][c] = atm.getd2Hprecip()->matrix[r][c];
-      } else {
-	// Snowpack: last (same timestep) in, first melt
-	_d2Hsnowpack->matrix[r][c] = InputMix(h0, _d2Hsnowpack->matrix[r][c],h_eff, atm.getd2Hprecip()->matrix[r][c]);
-	// Snowmelt: snowfall (=rain) signature
-	_d2Hsnowmelt->matrix[r][c] = atm.getd2Hprecip()->matrix[r][c];
-      }// close if
+      // Snowpack: last (same timestep) in, first melt
+      _d2Hsnowpack->matrix[r][c] = InputMix(h0, _d2Hsnowpack->matrix[r][c],h_eff, getd2Hthroughfall_sum()->matrix[r][c]);
+      // Snowmelt: snowfall (=rain) signature
+      _d2Hsnowmelt->matrix[r][c] =  getd2Hthroughfall_sum()->matrix[r][c];
     } //close deuterium
 
     if(ctrl.sw_18O){
-      if(h0 < RNDOFFERR){
-	_d18Osnowpack->matrix[r][c] = atm.getd18Oprecip()->matrix[r][c]; // if there was no previous snow
-	_d18Osnowmelt->matrix[r][c] = atm.getd18Oprecip()->matrix[r][c];
-      } else {
-	// Snowpack: last (same timestep) in, first melt
-	_d18Osnowpack->matrix[r][c] = InputMix(h0, _d18Osnowpack->matrix[r][c],h_eff, atm.getd18Oprecip()->matrix[r][c]);
-	// Snowmelt: snowfall (=rain) signature
-	_d18Osnowmelt->matrix[r][c] = atm.getd18Oprecip()->matrix[r][c];
-      } //close if
+      // Snowpack: last (same timestep) in, first melt
+      _d18Osnowpack->matrix[r][c] = InputMix(h0, _d18Osnowpack->matrix[r][c],h_eff, getd2Hthroughfall_sum()->matrix[r][c]);
+      // Snowmelt: snowfall (=rain) signature
+      _d18Osnowmelt->matrix[r][c] =  getd18Othroughfall_sum()->matrix[r][c];
     } // close oxygen-18
 
     if(ctrl.sw_Age){
-      if(h0 < RNDOFFERR){
-	_Agesnowpack->matrix[r][c] = 0.0;
-	_Agesnowmelt->matrix[r][c] = 0.0;
-      } else {
-	// Snowpack: last (same timestep) in, first melt
-	_Agesnowpack->matrix[r][c] = InputMix(h0, _Agesnowpack->matrix[r][c], h_eff, 0.0);
-	// Snowmelt: age 0
-	_Agesnowmelt->matrix[r][c] = 0.0;
-      } //close if
+      // Snowpack: last (same timestep) in, first melt
+      _Agesnowpack->matrix[r][c] = InputMix(h0, _Agesnowpack->matrix[r][c], h_eff,  getAgethroughfall_sum()->matrix[r][c]);
+      // Snowmelt: age 0
+      _Agesnowmelt->matrix[r][c] = 0.0;
     } //close age
 
+  //------------------------------------------------------------------------------------------------
+  // Snow exists before - may not exist after (more melt than snow)
+  //------------------------------------------------------------------------------------------------          
   } else {
-    cout << "Snow exists but snowin is less than melt" << endl;
-    cout << "Melt    " << dh << " snowin: " << snow_in << " h: " << h << endl; 
-    cout << "d2Hpack " << _d2Hsnowpack->matrix[r][c] << " atm: " << atm.getd2Hprecip()->matrix[r][c] << endl; 
     // Case where there is more snowmelt than snowfall: 
     // no mixing in snowpack, snowmelt has mixed signature
     h_eff = dh - snow_in;
-
     if(ctrl.sw_2H){
       // Snowpack: no change (all recent snow has melted)
       // Snowmelt: mix of snowpack and throughfall
-      _d2Hsnowmelt->matrix[r][c] = InputMix(h_eff, _d2Hsnowpack->matrix[r][c],snow_in, atm.getd2Hprecip()->matrix[r][c]);
-      cout << "d2Hmelt " << _d2Hsnowmelt->matrix[r][c] << endl;
+      _d2Hsnowmelt->matrix[r][c] = InputMix(h_eff, _d2Hsnowpack->matrix[r][c],snow_in, getd2Hthroughfall_sum()->matrix[r][c]);
     }    
     if(ctrl.sw_18O){
       // Snowpack: no change (all recent snow has melted)
       // Snowmelt: mix of snowpack and throughfall
-      _d18Osnowmelt->matrix[r][c] = InputMix(h_eff, _d18Osnowpack->matrix[r][c], snow_in, atm.getd18Oprecip()->matrix[r][c]);
-
+      _d18Osnowmelt->matrix[r][c] = InputMix(h_eff, _d18Osnowpack->matrix[r][c], snow_in, getd18Othroughfall_sum()->matrix[r][c]);
     }
     
     if(ctrl.sw_Age){
       // Snowpack: no change (all snow in melted)
       // Snowmelt: mix of snowpack and throughfall
-      _Agesnowmelt->matrix[r][c] = InputMix(h_eff, _Agesnowpack->matrix[r][c], snow_in, 0.0);
-      
+      _Agesnowmelt->matrix[r][c] = InputMix(h_eff, _Agesnowpack->matrix[r][c], snow_in, getAgethroughfall_sum()->matrix[r][c]);
     }
-  }
-
+  } 
 }
 
 

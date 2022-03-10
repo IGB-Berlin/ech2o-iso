@@ -36,7 +36,8 @@ int SolveTimeStep(){
   oBasin->SolveCanopyFluxes(*oAtmosphere, *oControl, *oTracking);
   oBasin->SolveSurfaceFluxes(*oAtmosphere, *oControl, *oTracking);
   oBasin->CalculateGrowForest(*oAtmosphere, *oControl);
-  oBasin->DailyGWRouting(*oAtmosphere, *oControl, *oTracking);
+  if(oControl->toggle_hydrologic_engine == 0)
+    oBasin->DailyGWRouting(*oAtmosphere, *oControl, *oTracking);
   oBasin->CalculateSatArea(*oAtmosphere, *oControl);
 
   // If tracking...	  

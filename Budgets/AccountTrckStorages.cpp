@@ -19,7 +19,7 @@
  *     along with Ech2o.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Contributors:
- *    Marco Maneta, Sylvain Kuppel
+ *    Marco Maneta, Sylvain Kuppel, Xiaoqiang Yang
  *******************************************************************************/
 /*
  * AccountTrckStorages.cpp
@@ -29,7 +29,7 @@
  */
 #include "Budget.h"
 
-double Budget::AccountTrckStorages(const grid *map1, const grid *map2, const Basin *b)
+double Budget::AccountTrckStorages(const grid *map1, const grid *map2, const grid *map3, const Basin *b)
 {
   
   UINT4 length = b->getSortedGrid().cells.size();
@@ -45,7 +45,7 @@ double Budget::AccountTrckStorages(const grid *map1, const grid *map2, const Bas
     r = b->getSortedGrid().cells[i].row;
     c = b->getSortedGrid().cells[i].col;
 
-    result += (map1->matrix[r][c]* map2->matrix[r][c] *dx*dx);
+    result += (map1->matrix[r][c]* map2->matrix[r][c] *dx*dx*map3->matrix[r][c]);
     //if(iso == 0 or iso==1)
     //result += (map1->matrix[r][c]* Delta2Ratio(map2->matrix[r][c], iso) *dx*dx);
     //else if(iso ==2)

@@ -42,15 +42,14 @@ int Basin::CalcKsatLayers(Control &ctrl){
   { 
 #pragma omp for nowait
 
-    for (UINT4 j = 0; j < _vSortedGrid.cells.size(); j++)
-      {
+    for (UINT4 j = 0; j < _vSortedGrid.cells.size(); j++) {
 	r = _vSortedGrid.cells[j].row;
 	c = _vSortedGrid.cells[j].col;
 
 	K0 = _Ksat0->matrix[r][c];
 
 	//Check if the parameters are already defined
-	if(!(ctrl.sw_ddSoilPar)){
+	if(ctrl.toggle_soil_prop != 0 ){
 	  // Check if profile option is activated: exponential profile	 
 	  if(ctrl.sw_expKsat){
 
@@ -74,6 +73,10 @@ int Basin::CalcKsatLayers(Control &ctrl){
 	    _KsatL2->matrix[r][c] = K0 ;
 	    _KsatL3->matrix[r][c] = K0 ;
 	  }
+	} else {
+	  _KsatL1->matrix[r][c] = K0 ;
+	  _KsatL2->matrix[r][c] = K0 ;
+	  _KsatL3->matrix[r][c] = K0 ;
 	}
 	
       } // for
@@ -93,23 +96,20 @@ int Basin::CalcPorosLayers(Control &ctrl){
   { 
 #pragma omp for nowait
 
-    for (UINT4 j = 0; j < _vSortedGrid.cells.size(); j++)
-      {
+    for (UINT4 j = 0; j < _vSortedGrid.cells.size(); j++) {
 	r = _vSortedGrid.cells[j].row;
 	c = _vSortedGrid.cells[j].col;
 
 	phi0 = _porosity0->matrix[r][c];
 	//Check if the parameters are already defined
-	if(!(ctrl.sw_ddSoilPar)){
+	if(ctrl.toggle_soil_prop != 0){
 
 	  // Check if profile option is activated: exponential profile
 	  if(ctrl.sw_expPoros){
-
 	    d = _soildepth->matrix[r][c];
 	    d1 = _depth_layer1->matrix[r][c];
 	    d2 = _depth_layer2->matrix[r][c];
 	    k = _kporos->matrix[r][c];
-
 	    if(abs(k) > RNDOFFERR){
 	      _porosityL1->matrix[r][c] = k*phi0 * (1 - expl(-d1/k)) / d1;
 	      _porosityL2->matrix[r][c] = k*phi0 * (expl(-d1/k) - expl(-(d1+d2)/k)) / d2;
@@ -124,6 +124,10 @@ int Basin::CalcPorosLayers(Control &ctrl){
 	    _porosityL2->matrix[r][c] = phi0 ;
 	    _porosityL3->matrix[r][c] = phi0 ;
 	  }
+	} else {
+	  _porosityL1->matrix[r][c] = phi0 ;
+	  _porosityL2->matrix[r][c] = phi0 ;
+	  _porosityL3->matrix[r][c] = phi0 ;
 	}
       } // for
   } //end omp parallel block
@@ -139,13 +143,11 @@ int Basin::CalcFieldCapacity(Control &ctrl){
 
 #pragma omp parallel default(none)\
   private(  r,c), shared(ctrl)
-	for (UINT4 j = 0; j < _vSortedGrid.cells.size() ; j++)
-	  {
+	for (UINT4 j = 0; j < _vSortedGrid.cells.size() ; j++) {
 	    r = _vSortedGrid.cells[j].row;
 	    c = _vSortedGrid.cells[j].col;
 	   
-	    if(!(ctrl.sw_ddSoilPar)){	//if the parameters are defined for each layer
-
+	    if(ctrl.toggle_soil_prop != 2){//if the parameters are not defined for each layer
 	      _KvKsL1->matrix[r][c] = _KvKs->matrix[r][c];
 	      _KvKsL2->matrix[r][c] = _KvKs->matrix[r][c]; 
 	      _KvKsL3->matrix[r][c] = _KvKs->matrix[r][c];

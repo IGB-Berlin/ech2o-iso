@@ -98,12 +98,28 @@ grid *Basin::getCanopyWaterStor(UINT4 n) const {
 	return fForest->getCanopyWaterStorSpeciesMap(n);
 }
 
+grid *Basin::getRootUptakeL1(UINT4 n) const {
+  return fForest->getRootUptakeL1Map(n);
+}
+
+grid *Basin::getRootUptakeL2(UINT4 n) const {
+  return fForest->getRootUptakeL2Map(n);
+}
+
+grid *Basin::getRootUptakeL3(UINT4 n) const {
+  return fForest->getRootUptakeL3Map(n);
+}
+
 grid *Basin::getETspecies(UINT4 n) const {
 	return fForest->getETSpeciesMap(n);
 }
 
 grid *Basin::getTranspiration(UINT4 n) const {
 	return fForest->getTranspirationSpeciesMap(n);
+}
+
+grid *Basin::getTranspirationFlux(UINT4 n) const {
+	return fForest->getTranspirationFluxSpeciesMap(n);
 }
 
 grid *Basin::getEinterception(UINT4 n) const {
@@ -113,12 +129,22 @@ grid *Basin::getEsoil(UINT4 n) const {
 	return fForest->getEsoilSpeciesMap(n);
 }
 
+grid *Basin::getSoilWaterPotential(UINT4 n) const {
+	return fForest->getSoilWaterPotSpeciesMap(n);
+}
+
 grid *Basin::getLeafWaterPotential(UINT4 n) const {
 	return fForest->getLeafWaterPotSpeciesMap(n);
 }
+
+grid *Basin::getSapVelocity(UINT4 n) const {
+	return fForest->getSapVelocitySpeciesMap(n);
+}
+
 grid *Basin::getRootFrac1(UINT4 n) const {
   return fForest->getRootFrac1(n);
 }
+
 grid *Basin::getRootFrac2(UINT4 n) const {
   return fForest->getRootFrac2(n);
 }
@@ -127,6 +153,9 @@ grid *Basin::getRootFrac2(UINT4 n) const {
 // 2H
 grid *Basin::getd2Hcanopy(UINT4 n) const {
   return fForest->getd2Hcanopy(n);
+}
+grid *Basin::getd2Hthroughfall(UINT4 n) const {
+  return fForest->getd2Hthroughfall(n);
 }
 grid *Basin::getd2HevapI(UINT4 n) const {
   return fForest->getd2HevapI(n);
@@ -137,9 +166,18 @@ grid *Basin::getd2HevapT(UINT4 n) const {
 grid *Basin::getd2HevapS(UINT4 n) const {
   return fForest->getd2HevapS(n);
 }
+grid *Basin::getd2HevapI_Vap(UINT4 n) const {
+  return fForest->getd2HevapI_Vap(n);
+}
+grid *Basin::getd2HevapT_Vap(UINT4 n) const {
+  return fForest->getd2HevapT_Vap(n);
+}
 // 18O
 grid *Basin::getd18Ocanopy(UINT4 n) const {
   return fForest->getd18Ocanopy(n);
+}
+grid *Basin::getd18Othroughfall(UINT4 n) const {
+  return fForest->getd18Othroughfall(n);
 }
 grid *Basin::getd18OevapI(UINT4 n) const {
   return fForest->getd18OevapI(n);
@@ -150,9 +188,18 @@ grid *Basin::getd18OevapT(UINT4 n) const {
 grid *Basin::getd18OevapS(UINT4 n) const {
   return fForest->getd18OevapS(n);
 }
+grid *Basin::getd18OevapI_Vap(UINT4 n) const {
+  return fForest->getd18OevapI_Vap(n);
+}
+grid *Basin::getd18OevapT_Vap(UINT4 n) const {
+  return fForest->getd18OevapT_Vap(n);
+}
 // Age
 grid *Basin::getAgecanopy(UINT4 n) const {
 	return fForest->getAgecanopy(n);
+}
+grid *Basin::getAgethroughfall(UINT4 n) const {
+  return fForest->getAgethroughfall(n);
 }
 grid *Basin::getAgeevapI(UINT4 n) const {
 	return fForest->getAgeevapI(n);
