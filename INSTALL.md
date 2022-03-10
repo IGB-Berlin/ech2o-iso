@@ -61,7 +61,7 @@ For local Linux systems (full admin rights)
   - Install bash (check if installed using `which bash`)
   - Clone and follow installation for netcdf cxx4 (below) 
 
-   $ https://github.com/Unidata/netcdf-cxx4
+   `$ https://github.com/Unidata/netcdf-cxx4`
 
   - Modify the `.profile` (or `.bash_profile') for PATH,LD_LIBRARY_PATH,PYTHONPATH,CPATH
 	- May be necessary to include hdf5 location in CPATH (e.g. `CPATH=/usr/include/hdf5/serial`)
@@ -70,59 +70,89 @@ For local Linux systems (full admin rights)
 For Alternative Linux systems (partial admin rights)
   - set up install directory
 
-  $ export DEST=/some/path
+  `$ export DEST=/some/path`
 
   - install OpenBlas
-  $ cd OpenBLAS-0.3.7
-  $ make
-  $ make install PREFIX=$DEST
+
+`  $ cd OpenBLAS-0.3.7`
+
+`  $ make`
+
+`  $ make install PREFIX=$DEST`
 
   - install LAPACK
-  $ cd lapack
-  $ mkdir build && cd build
-  $ cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_LIBDIR=$DEST/lib ..
-  $ cmake --build -j . --target installw
+
+`  $ cd lapack`
+
+`  $ mkdir build && cd build`
+
+`  $ cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_LIBDIR=$DEST/lib ..`
+
+`  $ cmake --build -j . --target installw`
 
   - install ARMADILLO
-  $ cd armadillo
-  $ cmake .
-  $ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$DEST
-  $ make
-  $ make install
+
+`  $ cd armadillo`
+
+`  $ cmake .`
+
+`  $ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$DEST`
+
+`  $ make`
+
+`  $ make install`
 
   - install arpack-ng
-  $ cd arpack-ng
-  $ mkdir build && cd build
-  $ cmake -DEXAMPLES=OFF -DMPI=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=$DEST ..
-  $ make 
-  $ make install
+
+`  $ cd arpack-ng`
+
+`  $ mkdir build && cd build`
+
+`  $ cmake -DEXAMPLES=OFF -DMPI=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=$DEST ..`
+
+`  $ make `
+
+`  $ make install`
 
   - install superlu
-  $ cd superlu
-  $ mkdir build && cd build
-  $ cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=$DEST ..
-  $ make 
-  $ make install
+
+`  $ cd superlu`
+
+`  $ mkdir build && cd build`
+
+`  $ cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=$DEST ..`
+
+`  $ make `
+
+`  $ make install`
 
   - compiling EcH2O-ISO
-  $ cd ech2o_iso/Release-Linux
-  $ export LD_LIBRARY_PATH=$DEST/lib:$DEST/lib64:$LD_LIBRARY_PATH
+
+`  $ cd ech2o_iso/Release-Linux`
+
+`  $ export LD_LIBRARY_PATH=$DEST/lib:$DEST/lib64:$LD_LIBRARY_PATH`
 
   - edit *mk files
 	- Replacing:
-  $ g++ -DCPU_LITTLE_ENDIAN -I"../includes" ...
+
+`  $ g++ -DCPU_LITTLE_ENDIAN -I"../includes" ...`
  	- with 
-  $ g++ -DCPU_LITTLE_ENDIAN -I"../includes" -I"${DEST}/include" ...
+
+`  $ g++ -DCPU_LITTLE_ENDIAN -I"../includes" -I"${DEST}/include" ...`
 
   - Find and update `LD_LIBRARY_PATH` to include boost
-  $ export BOOSTDIR= … 
-  $ export LD_LIBRARY_PATH=$BOOSTDIR/lib:$LD_LIBRARY_PATH
+
+`  $ export BOOSTDIR= … `
+
+`  $ export LD_LIBRARY_PATH=$BOOSTDIR/lib:$LD_LIBRARY_PATH`
 
   - edited the g++ line in `Release-Linux/makefile`
 	- from 
-  $ g++ -L"../lib" -L"/usr/local/lib" -fopenmp ...
+
+`  $ g++ -L"../lib" -L"/usr/local/lib" -fopenmp ...`
 	- to
-  $ g++ -L"../lib" -L"/usr/local/lib" -L"${DEST}/lib64" -L"${DEST}/lib" -L"${BOOSTDIR}/lib" -I"${DEST}/include"  -I"${BOOSTDIR}/include/boost" -fopenmp ...
+
+`  $ g++ -L"../lib" -L"/usr/local/lib" -L"${DEST}/lib64" -L"${DEST}/lib" -L"${BOOSTDIR}/lib" -I"${DEST}/include"  -I"${BOOSTDIR}/include/boost" -fopenmp ...`
 
 To check for all installations
   - Check the libraries folder in ech2o/lib for `libarmadillo.so` , create symolic link in directory if libary is not located here
@@ -135,6 +165,7 @@ To check for all installations
     correct static library. Save and close the editor
   - from the command line type `make` to make the source.
   - If compiling gets stuck with `relocation of R_X86...` edit makefile to include `-no-pie`
+![**Figure 2.** Example of adding -no-pie to the makefile](./Documentation/EcH2O_Makefile.png)
 
 ## 3\. Making `asc2c`
 
