@@ -28,7 +28,7 @@ CPP_SRCS += \
 ../Budgets/TotalSaturationArea.cpp \
 ../Budgets/TotalSrftoChn.cpp \
 ../Budgets/TotalStorage.cpp \
-../Budgets/TotalGrndFlow.cpp \
+../Budgets/totalGrndFlow.cpp \
 ../Budgets/TrckBalanceError.cpp
 
 OBJS += \
@@ -47,7 +47,7 @@ OBJS += \
 ./Budgets/TotalEvaporationS.o \
 ./Budgets/TotalEvaporationC.o \
 ./Budgets/TotalEvaporationI.o \
-./Budgets/TotalGrndFlow.o \
+./Budgets/totalGrndFlow.o \
 ./Budgets/TotalGWtoChn.o \
 ./Budgets/TotalTranspiration.o \
 ./Budgets/TotalLeakage.o \
@@ -75,7 +75,7 @@ CPP_DEPS += \
 ./Budgets/TotalEvaporationS.d \
 ./Budgets/TotalEvaporationC.d \
 ./Budgets/TotalEvaporationI.d \
-./Budgets/TotalGrndFlow.d \
+./Budgets/totalGrndFlow.d \
 ./Budgets/TotalGWtoChn.d \
 ./Budgets/TotalTranspiration.d \
 ./Budgets/TotalLeakage.d \
