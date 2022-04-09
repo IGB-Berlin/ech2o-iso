@@ -8,34 +8,33 @@ CPP_SRCS += \
 ../wrappers/CreateWorld.cpp \
 ../wrappers/CrunchWorld.cpp \
 ../wrappers/Report2maps.cpp \
-../wrappers/Report2nc.cpp \
 ../wrappers/Report2screen.cpp \
 ../wrappers/SolveTimeStep.cpp \
 ../wrappers/Splash.cpp \
 ../wrappers/globals.cpp 
+//../wrappers/Report2nc.cpp \
 
 OBJS += \
 ./wrappers/CalculateBudgets.o \
 ./wrappers/CreateWorld.o \
 ./wrappers/CrunchWorld.o \
 ./wrappers/Report2maps.o \
-./wrappers/Report2nc.o \
 ./wrappers/Report2screen.o \
 ./wrappers/SolveTimeStep.o \
 ./wrappers/Splash.o \
 ./wrappers/globals.o 
+//./wrappers/Report2nc.o \
 
 CPP_DEPS += \
 ./wrappers/CalculateBudgets.d \
 ./wrappers/CreateWorld.d \
 ./wrappers/CrunchWorld.d \
 ./wrappers/Report2maps.d \
-./wrappers/Report2nc.d \
 ./wrappers/Report2screen.d \
 ./wrappers/SolveTimeStep.d \
 ./wrappers/Splash.d \
 ./wrappers/globals.d 
-
+//./wrappers/Report2nc.d \
 
 # Each subdirectory must supply rules for building sources it contributes
 wrappers/%.o: ../wrappers/%.cpp
