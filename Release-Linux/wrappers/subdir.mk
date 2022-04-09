@@ -12,7 +12,7 @@ CPP_SRCS += \
 ../wrappers/SolveTimeStep.cpp \
 ../wrappers/Splash.cpp \
 ../wrappers/globals.cpp 
-//../wrappers/Report2nc.cpp \
+#../wrappers/Report2nc.cpp \
 
 OBJS += \
 ./wrappers/CalculateBudgets.o \
@@ -23,7 +23,7 @@ OBJS += \
 ./wrappers/SolveTimeStep.o \
 ./wrappers/Splash.o \
 ./wrappers/globals.o 
-//./wrappers/Report2nc.o \
+#./wrappers/Report2nc.o \
 
 CPP_DEPS += \
 ./wrappers/CalculateBudgets.d \
@@ -34,7 +34,7 @@ CPP_DEPS += \
 ./wrappers/SolveTimeStep.d \
 ./wrappers/Splash.d \
 ./wrappers/globals.d 
-//./wrappers/Report2nc.d \
+#./wrappers/Report2nc.d \
 
 # Each subdirectory must supply rules for building sources it contributes
 wrappers/%.o: ../wrappers/%.cpp
