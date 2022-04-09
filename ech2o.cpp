@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
       cout << "Start time later than climate start time" << endl;
       cout << "   -- Spin up climate maps to start time" << endl;
       // need to initialize nc files here if start time is not 1
-      if(oControl->sw_netcdf){
+      /* if(oControl->sw_netcdf){ //commented out for now
 	oReport->CreatOutputNC(oControl->path_ResultsFolder, "W");
 	oReport->CreatOutputNC(oControl->path_ResultsFolder, "VG");
 	if(oControl->sw_trck){
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
 	  if(oControl->sw_Age)
 	    oReport->CreatOutputNC(oControl->path_ResultsFolder, "TA");
 	}
-      }//end net cdf initialization
+      }*/ //end net cdf initialization
       // Run loop until correct starting time
       while (oControl->current_t_step <= oControl->starttime) {
 	oControl->AdvanceTimeStep();
@@ -114,11 +114,11 @@ int main(int argc, char* argv[]) {
       if (oControl->current_t_step >= oControl->reportMap_start) { 
 	reportMap_time += oControl->dt;
 	if (reportMap_time >= oControl->reportMap_times) { //if report time overdue
-	  if(oControl->sw_netcdf){
-	    Report2nc(); //report results in nc
-	  } else {
+	  //if(oControl->sw_netcdf){ //commented out for now
+	  //  Report2nc(); //report results in nc
+	  //} else {
 	    Report2Maps(); //report results
-	  }
+	  //}
 	  reportMap_time = 0; //reset the counter
 	}
       }
