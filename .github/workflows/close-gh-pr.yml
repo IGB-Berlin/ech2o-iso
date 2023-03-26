@@ -1,0 +1,13 @@
+name: Auto Close Pull Request
+
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: superbrothers/close-pull-request@v3
+      with:
+        comment: "This repository is a mirror only and does not accept pull requests. Please submit your pull request to https://gitlab.igb-berlin.de/ech2o-iso/ech2o-iso"
